@@ -1,9 +1,9 @@
 {
   "versionCode": 1,
   "versionName": "1.0.0",
-  "apkUrl": "https://github.com/nuvetrix/wishplay/releases/download/v1.0.0/wishplay-release.apk",
-  "sha256": "555a4e4874ec06d71281aab90ee748d363281f70222ef3a3a003dc9b4cb2ce41",
+  "apkUrl": "https://github.com/mdliad-se/WishPlay/releases/download/v1.0.0/wishplay-release.apk",
+  "sha256": "da9233c6c3f95e4befea8cb9c353d3c9f24457b9035a5a7502a6d5faf250745e",
   "minSupportedVersionCode": 1,
-  "releaseNotes": "Official v1.0.0 release. Complete native wishlist tracking for PC, consoles, and mobile. Reliable local alerts, cloud sync, Material 3 Expressive design, encrypted local database, lifetime Pro entitlement, and in-app updates.",
-  "publishedAt": "2026-10-05T11:37:00Z"
+  "releaseNotes": "Official v1.0.0 release. Powered by live RAWG video games database, offline-first SQLCipher encryption, Material 3 Expressive UI, and smart alerts.",
+  "publishedAt": "2026-10-05T16:38:00Z"
 }
