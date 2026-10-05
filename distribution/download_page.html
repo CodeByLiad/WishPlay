@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WishPlay — Never Miss a Game Drop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-ink: #16132E;
+            --surface-card: #201B42;
+            --accent-gold: #FFB938;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B6B2D8;
+            --border: #2C2658;
+            --success: #6ED6C4;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-ink);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 680px;
+            width: 100%;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 185, 56, 0.15);
+            color: var(--accent-gold);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 99px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 40px;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 14px;
+            letter-spacing: -0.02em;
+        }
+        p.subtitle {
+            font-size: 17px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 32px;
+        }
+        .download-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 28px;
+            margin-bottom: 28px;
+        }
+        .btn-download {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: var(--accent-gold);
+            color: #16132E;
+            font-size: 18px;
+            font-weight: 800;
+            text-decoration: none;
+            padding: 18px 24px;
+            border-radius: 20px;
+            transition: transform 0.15s ease, filter 0.15s ease;
+            margin-bottom: 20px;
+        }
+        .btn-download:hover {
+            filter: brightness(1.08);
+            transform: translateY(-2px);
+        }
+        .verify-box {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 16px;
+            padding: 16px;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            word-break: break-all;
+            margin-top: 14px;
+        }
+        .verify-box span.title {
+            color: var(--text-primary);
+            font-weight: bold;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 20px;
+        }
+        .feature-item {
+            background: var(--surface-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 18px;
+        }
+        .feature-title {
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .feature-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        footer {
+            margin-top: 40px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="badge">Nuvetrix Official Direct Release</div>
+        <h1>WishPlay for Android</h1>
+        <p class="subtitle">One list for every game you are waiting for on PC, consoles, and mobile. Reliable countdown reminders, date-change alerts, and zero ads.</p>
+
+        <div class="download-card">
+            <a href="https://github.com/nuvetrix/wishplay/releases/latest/download/wishplay-release.apk" class="btn-download">
+                Download APK (v1.0.0)
+            </a>
+            <div style="font-size: 13px; color: var(--text-secondary); text-align: center;">
+                Requires Android 8.0 (Oreo) or later · Direct APK · ~15 MB
+            </div>
+
+            <div class="verify-box">
+                <span class="title">Official Signing Certificate Fingerprint (SHA-256):</span>
+                64:23:4B:91:38:61:94:0A:68:57:9F:50:5B:73:C0:B0:86:14:4E:51:7A:FA:F8:8C:FE:19:D4:4F:92:4B:27:32
+            </div>
+
+            <div class="verify-box" style="margin-top: 10px;">
+                <span class="title">How to verify on your computer:</span>
+                <code>keytool -printcert -jarfile wishplay-release.apk</code>
+            </div>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-title">Offline First</div>
+                <div class="feature-desc">Encrypted with SQLCipher. Works completely offline with optional Google sync.</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-title">Reliable Alerts</div>
+                <div class="feature-desc">WorkManager reminders fire locally even if your phone is offline on drop day.</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-title">Lifetime Pro</div>
+                <div class="feature-desc">Unlimited list, price-drop alerts, custom themes & Jetpack Glance home widget.</div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-title">No Ads or Trackers</div>
+                <div class="feature-desc">No third-party ad networks, no analytics spying. Your list stays yours.</div>
+            </div>
+        </div>
+
+        <footer>
+            WishPlay is published by Nuvetrix. All trademarks belong to their respective owners.
+        </footer>
+    </div>
+</body>
+</html>

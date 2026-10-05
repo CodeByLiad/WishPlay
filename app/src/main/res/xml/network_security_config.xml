@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Strictly disallow all cleartext (HTTP) traffic -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Certificate pinning for WishPlay Cloud Function and API domains with backup pins -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">cloudfunctions.net</domain>
+        <domain includeSubdomains="true">nuvetrix.workers.dev</domain>
+        <domain includeSubdomains="true">firebaseio.com</domain>
+        <domain includeSubdomains="true">googleapis.com</domain>
+        <pin-set expiration="2028-01-01">
+            <!-- Google Trust Services Root R1 -->
+            <pin digest="SHA-256">hxqRlPTuQEkOL9CrOcxBrTUl6+enRg0EfcqqbxjmqGs=</pin>
+            <!-- Cloudflare Inc ECC CA-3 (Workers) -->
+            <pin digest="SHA-256">kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=</pin>
+            <!-- Backup Pin: ISRG Root X1 (Let's Encrypt fallback) -->
+            <pin digest="SHA-256">C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=</pin>
+            <!-- Backup Pin: DigiCert Global Root G2 -->
+            <pin digest="SHA-256">i7WTqTvh0OioIruIfFR4kRqhVtUGF1UvvW9FnKUGuOI=</pin>
+        </pin-set>
+    </domain-config>
+</network-security-config>

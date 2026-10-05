@@ -1,0 +1,76 @@
+<resources>
+    <string name="app_name">WishPlay</string>
+    
+    <!-- Fallback Strings per PRD -->
+    <string name="tba_date">To be announced</string>
+    <string name="expected_in_year">Expected in %1$s</string>
+    <string name="trailer_tba">Trailer will be shared later</string>
+    <string name="trailer_tba_subtitle">We\'ll add it here as soon as the developer posts one.</string>
+    <string name="reqs_tba">Will be shared later</string>
+    <string name="storage_tba">Will be shared closer to launch</string>
+    <string name="console_reqs">Runs on any %1$s. No extra hardware needed.</string>
+    
+    <!-- Onboarding -->
+    <string name="onboarding_headline">Never miss\na game drop.</string>
+    <string name="onboarding_subtitle">Save the games you want, on any platform, and get a heads-up before they release.</string>
+    <string name="onboarding_note">Takes about 30 seconds to set up. You can change all of it later.</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="continue_as_guest">Continue as guest</string>
+    <string name="guest_note">As a guest, your list stays on this phone. Sign in any time to sync it.</string>
+    <string name="step_platforms_title">Which platforms do you play on?</string>
+    <string name="step_platforms_subtitle">Search and your wishlist start filtered to these. Pick as many as you like.</string>
+    <string name="step_lead_title">How early should we tap you?</string>
+    <string name="step_lead_subtitle">You always get an alert on release day. This is the extra heads-up before it.</string>
+    <string name="skip">Skip</string>
+    <string name="start_wishlist">Start my wishlist</string>
+    
+    <!-- Tabs -->
+    <string name="tab_wishlist">Wishlist</string>
+    <string name="tab_search">Search</string>
+    <string name="tab_alerts">Alerts</string>
+    <string name="tab_profile">Profile</string>
+    
+    <!-- Wishlist -->
+    <string name="my_wishlist">My wishlist</string>
+    <string name="empty_wishlist_headline">Add the first game\nyou\'re waiting on</string>
+    <string name="empty_wishlist_body">Search 300,000+ games, or add one yourself if it\'s too new for any database. We\'ll watch the date from there.</string>
+    <string name="search_games">Search games</string>
+    <string name="add_custom_game">Add a custom game</string>
+    <string name="next_drop">Next drop</string>
+    <string name="filter_all">All</string>
+    <string name="filter_upcoming">Upcoming</string>
+    <string name="filter_out_now">Out now</string>
+    <string name="filter_tba">Date TBA</string>
+    <string name="sort_nearest">Nearest release</string>
+    <string name="sort_added">Recently added</string>
+    <string name="sort_name">Name A to Z</string>
+    <string name="month_tba">Date to be announced</string>
+    <string name="month_out">Already out</string>
+    
+    <!-- Custom Game -->
+    <string name="custom_game_title">Add a custom game</string>
+    <string name="custom_game_info">For games WishPlay can\'t find. You set the release date, and alerts work the same way.</string>
+    <string name="game_name">Game name</string>
+    <string name="game_name_hint">e.g. Mango Rush</string>
+    <string name="game_name_error">Add a name to save this game.</string>
+    <string name="platforms">Platforms</string>
+    <string name="release_date">Release date</string>
+    <string name="in_a_month">In a month</string>
+    <string name="in_three_months">In 3 months</string>
+    <string name="next_year">Next year</string>
+    <string name="date_tba_checkbox">The date isn\'t announced yet</string>
+    <string name="notes_optional">Notes (optional)</string>
+    <string name="notes_hint">Where you heard about it, links, anything</string>
+    <string name="save_to_wishlist">Save to wishlist</string>
+    <string name="custom_game_footer">Covers, trailers and system requirements can\'t be fetched for a custom game. You can edit the date any time and the alerts follow it.</string>
+    
+    <!-- Notification Channels -->
+    <string name="channel_releases">Releases</string>
+    <string name="channel_reminders">Reminders</string>
+    <string name="channel_changes">Date changes</string>
+    <string name="channel_prices">Price drops</string>
+    
+    <!-- Widget -->
+    <string name="widget_title">WishPlay Next Drop</string>
+    <string name="widget_description">Shows the next upcoming game from your wishlist with a countdown to release.</string>
+</resources>

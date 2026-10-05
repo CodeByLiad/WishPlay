@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WishPlay app prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --page:#E6E2F0; --frame:#16132E;
+  --surface:#FBF9FF; --sc:#F1EEF8; --sch:#E8E4F2; --schh:#DDD8EC;
+  --on:#16132E; --onv:#4A4663; --outline:#77728F; --outv:#CAC5DA;
+  --primary:#2E2766; --onprimary:#FFFFFF;
+  --pc:#FFB938; --onpc:#2B1C00;
+  --sec:#E4DFFF; --onsec:#231A5C;
+  --ter:#5B3FE0; --terc:#E6DEFF; --onterc:#21105E;
+  --err:#B3261E; --errc:#F9DEDC; --onerrc:#410E0B;
+  --ok:#1E6E47; --okc:#CDEFD9;
+  --track:#D9D4E8; --scrim:rgba(22,19,46,.48);
+  --spring:cubic-bezier(.2,1.35,.3,1);
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"Figtree","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#0B0A17; --frame:#2F2C4B;
+    --surface:#131124; --sc:#1C1A33; --sch:#25223F; --schh:#302D4C;
+    --on:#EDEAF7; --onv:#C3BED7; --outline:#938EAB; --outv:#46425F;
+    --primary:#FFB938; --onprimary:#2B1C00;
+    --pc:#FFB938; --onpc:#2B1C00;
+    --sec:#342D6B; --onsec:#E4DFFF;
+    --ter:#B9A8FF; --terc:#3C2C8F; --onterc:#E6DEFF;
+    --err:#F2B8B5; --errc:#601410; --onerrc:#F9DEDC;
+    --ok:#7ED3A4; --okc:#0F3D27;
+    --track:#3A3657; --scrim:rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --page:#0B0A17; --frame:#2F2C4B;
+  --surface:#131124; --sc:#1C1A33; --sch:#25223F; --schh:#302D4C;
+  --on:#EDEAF7; --onv:#C3BED7; --outline:#938EAB; --outv:#46425F;
+  --primary:#FFB938; --onprimary:#2B1C00;
+  --pc:#FFB938; --onpc:#2B1C00;
+  --sec:#342D6B; --onsec:#E4DFFF;
+  --ter:#B9A8FF; --terc:#3C2C8F; --onterc:#E6DEFF;
+  --err:#F2B8B5; --errc:#601410; --onerrc:#F9DEDC;
+  --ok:#7ED3A4; --okc:#0F3D27;
+  --track:#3A3657; --scrim:rgba(0,0,0,.6);
+}
+.accent-violet{--pc:#B9A8FF; --onpc:#21105E}
+.accent-teal{--pc:#6ED6C4; --onpc:#00382F}
+.accent-coral{--pc:#FF9E8A; --onpc:#4A0E00}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%}
+body{margin:0;background:var(--page);color:var(--on);font:15px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--ter);outline-offset:2px}
+
+.stage{min-height:100%;display:flex;gap:56px;align-items:center;justify-content:center;padding:24px}
+.demo{width:270px;display:flex;flex-direction:column;gap:22px}
+.demo-brand{display:flex;align-items:center;gap:12px}
+.demo-brand b{font:800 26px/1 var(--display);letter-spacing:-.03em}
+.demo p{margin:0;color:var(--onv);font-size:14px}
+.demo h3{margin:0 0 10px;font:700 15px/1.2 var(--body)}
+.demo .row{display:flex;flex-wrap:wrap;gap:8px}
+
+.device{position:relative;width:392px;height:min(860px,calc(100svh - 48px));min-height:640px;border:10px solid var(--frame);border-radius:54px;background:var(--surface);overflow:hidden;flex-shrink:0}
+@media (max-width:760px){
+  .stage{flex-direction:column;padding:0;gap:0}
+  .device{width:100%;height:100svh;min-height:0;border:0;border-radius:0}
+  .demo{width:auto;padding:28px 20px 40px}
+}
+#app{position:absolute;inset:0}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--surface)}
+.scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding-bottom:128px}
+.scroll.nonav{padding-bottom:40px}
+.in-fwd{animation:inF .46s var(--spring)}
+.in-back{animation:inB .46s var(--spring)}
+.in-fade{animation:inFade .3s ease-out}
+@keyframes inF{from{transform:translateX(28px);opacity:0}}
+@keyframes inB{from{transform:translateX(-28px);opacity:0}}
+@keyframes inFade{from{opacity:0}}
+
+/* type */
+.display{font:800 36px/1.02 var(--display);letter-spacing:-.03em;margin:0}
+.h1{font:800 28px/1.08 var(--display);letter-spacing:-.025em;margin:0}
+.h2{font:700 19px/1.2 var(--display);letter-spacing:-.01em;margin:0}
+.muted{color:var(--onv)}
+.small{font-size:13px}
+.sec{padding:28px 20px 0}
+.sec > .h2{margin-bottom:12px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 22px;border:0;border-radius:24px;font-weight:600;font-size:15px;transition:border-radius .3s var(--spring),transform .25s var(--spring),background .2s;white-space:nowrap}
+.btn:active{border-radius:12px;transform:scale(.97)}
+.btn svg{width:20px;height:20px}
+.filled{background:var(--primary);color:var(--onprimary)}
+.gold{background:var(--pc);color:var(--onpc)}
+.tonal{background:var(--sec);color:var(--onsec)}
+.outlined{background:transparent;border:1px solid var(--outline);color:var(--on)}
+.textbtn{background:transparent;color:var(--primary);padding:0 12px}
+:root[data-theme="dark"] .textbtn{color:var(--pc)}
+.danger{background:transparent;color:var(--err);border:1px solid var(--outv)}
+.lg{height:60px;border-radius:30px;font-size:17px;padding:0 28px}
+.lg:active{border-radius:16px}
+.block{width:100%}
+.ib{display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:24px;border:0;background:transparent;transition:border-radius .3s var(--spring),background .2s;flex-shrink:0}
+.ib:active{border-radius:14px}
+.ib svg{width:24px;height:24px}
+.ib.t{background:var(--sec);color:var(--onsec)}
+.ib.onimg{background:rgba(22,19,46,.55);color:#fff}
+.ib.on{background:var(--pc);color:var(--onpc)}
+
+/* chips & groups */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 20px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 16px;border:1px solid var(--outv);border-radius:12px;background:transparent;font-weight:600;font-size:14px;white-space:nowrap;transition:border-radius .35s var(--spring),background .2s}
+.chip svg{width:18px;height:18px}
+.chip.on{background:var(--sec);color:var(--onsec);border-color:transparent;border-radius:19px}
+.chip:active{transform:scale(.96)}
+.seg{display:flex;gap:3px}
+.seg button{flex:1;height:44px;border:0;background:var(--sch);font-weight:600;font-size:14px;border-radius:8px;transition:border-radius .35s var(--spring),background .2s}
+.seg button:first-child{border-radius:22px 8px 8px 22px}
+.seg button:last-child{border-radius:8px 22px 22px 8px}
+.seg button.on{background:var(--primary);color:var(--onprimary);border-radius:22px}
+
+/* lists */
+.group{display:flex;flex-direction:column;gap:3px;margin:0 16px}
+.li{display:flex;align-items:center;gap:14px;width:100%;min-height:76px;padding:12px 16px;border:0;border-radius:8px;background:var(--sc);text-align:left;transition:background .2s,border-radius .3s var(--spring)}
+.li:active{background:var(--sch);border-radius:20px}
+.group > :first-child{border-top-left-radius:26px;border-top-right-radius:26px}
+.group > :last-child{border-bottom-left-radius:26px;border-bottom-right-radius:26px}
+.li-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.li-title{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-sub{font-size:13px;color:var(--onv);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.when{font-weight:700;font-size:13px;text-align:right;white-space:nowrap;padding:6px 10px;border-radius:10px;background:var(--sch)}
+.when.soon{background:var(--pc);color:var(--onpc)}
+.when.out{background:var(--okc);color:var(--ok)}
+.when.tba{background:transparent;border:1.5px dashed var(--outline);color:var(--onv)}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:8px;background:var(--terc);color:var(--onterc)}
+.tag svg{width:13px;height:13px}
+.row-li{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--sc);border-radius:8px;min-height:64px}
+.row-li .grow{flex:1;min-width:0}
+.row-li b{display:block;font-weight:700}
+.row-li .ic{width:40px;height:40px;border-radius:14px;background:var(--sch);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.row-li .ic svg{width:22px;height:22px}
+.row-li > svg{width:22px;height:22px;flex-shrink:0;color:var(--onv)}
+button.row-li{width:100%;border:0;text-align:left}
+
+/* logos & covers */
+.logo{position:relative;width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.logo svg{position:absolute;inset:0;width:100%;height:100%}
+.logo span{position:relative;font:800 18px/1 var(--display);color:#fff;letter-spacing:-.02em}
+.cover{position:relative;height:236px;overflow:hidden}
+.cover > svg{position:absolute;inset:0;width:100%;height:100%}
+.cover-top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;z-index:2}
+
+/* switch */
+.sw{position:relative;width:52px;height:32px;border-radius:16px;border:2px solid var(--outline);background:var(--sch);flex-shrink:0;padding:0;transition:background .2s,border-color .2s}
+.sw::after{content:"";position:absolute;top:50%;left:6px;width:16px;height:16px;border-radius:50%;background:var(--outline);transform:translateY(-50%);transition:left .35s var(--spring),width .35s var(--spring),height .35s var(--spring),background .2s}
+.sw[aria-checked="true"]{background:var(--primary);border-color:var(--primary)}
+.sw[aria-checked="true"]::after{left:24px;width:24px;height:24px;background:var(--onprimary)}
+.sw:disabled{opacity:.45}
+
+/* fields */
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600;font-size:14px}
+.input{height:56px;border:1px solid var(--outline);border-radius:16px;background:var(--surface);color:var(--on);padding:0 16px;font:16px var(--body);width:100%}
+textarea.input{height:96px;padding:14px 16px;resize:none}
+.input:focus{outline:none;border:2px solid var(--primary);padding:0 15px}
+textarea.input:focus{padding:13px 15px}
+.err{color:var(--err);font-size:13px;font-weight:600}
+.check{display:flex;align-items:center;gap:10px;font-weight:600;font-size:14px}
+.check input{width:20px;height:20px;accent-color:var(--primary)}
+
+/* search */
+.searchbar{display:flex;align-items:center;gap:4px;height:58px;margin:12px 16px 8px;padding:0 6px 0 18px;border-radius:29px;background:var(--sch)}
+.searchbar svg{width:22px;height:22px;flex-shrink:0}
+.searchbar input{flex:1;min-width:0;height:100%;border:0;background:transparent;color:var(--on);font:16px var(--body);padding:0 8px}
+.searchbar input:focus{outline:none}
+.addbtn{width:48px;height:48px;border-radius:16px;border:0;background:var(--sec);color:var(--onsec);display:flex;align-items:center;justify-content:center;transition:border-radius .35s var(--spring),background .2s;flex-shrink:0}
+.addbtn svg{width:22px;height:22px}
+.addbtn.done{background:var(--primary);color:var(--onprimary);border-radius:24px}
+
+/* hero */
+.hero{margin:8px 16px 0;padding:22px;background:var(--pc);color:var(--onpc);border-radius:36px 36px 36px 12px;display:flex;flex-direction:column;gap:14px;border:0;text-align:left;width:calc(100% - 32px);transition:border-radius .4s var(--spring)}
+.hero:active{border-radius:22px}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.hero-num{font:800 88px/.82 var(--display);letter-spacing:-.05em}
+.hero-unit{font:700 20px/1 var(--display);margin-left:4px}
+.hero .logo{width:64px;height:64px}
+.wave{display:block;max-width:100%;height:auto;color:currentColor;overflow:visible}
+.wave-path{animation:wv 1.2s linear infinite}
+@keyframes wv{from{transform:translateX(-16px)}to{transform:translateX(0)}}
+
+/* nav & fab */
+.nav{position:absolute;left:0;right:0;bottom:0;height:84px;background:var(--sc);display:flex;padding:10px 4px 14px;z-index:5}
+.nav button{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--onv)}
+.nav .ind{width:56px;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;transition:background .25s,width .4s var(--spring)}
+.nav .ind svg{width:24px;height:24px}
+.nav button[aria-current="page"]{color:var(--on)}
+.nav button[aria-current="page"] .ind{background:var(--sec);color:var(--onsec);width:64px}
+.fab{position:absolute;right:16px;bottom:100px;height:64px;padding:0 22px 0 18px;border:0;border-radius:22px;background:var(--pc);color:var(--onpc);display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;z-index:7;transition:border-radius .4s var(--spring),padding .4s var(--spring),transform .3s var(--spring)}
+.fab svg{width:26px;height:26px;transition:transform .4s var(--spring)}
+.fab:active{transform:scale(.95)}
+.fab.open{border-radius:32px;padding:0 19px}
+.fab.open svg{transform:rotate(45deg)}
+.fab-menu{position:absolute;right:16px;bottom:176px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;z-index:7}
+.fab-menu button{height:56px;padding:0 22px 0 18px;border:0;border-radius:28px;background:var(--pc);color:var(--onpc);display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;animation:fabIn .4s var(--spring) both}
+.fab-menu button:nth-child(2){animation-delay:.05s}
+.fab-menu svg{width:22px;height:22px}
+@keyframes fabIn{from{transform:translateY(16px) scale(.9);opacity:0}}
+.scrim{position:absolute;inset:0;background:var(--scrim);z-index:6;border:0;animation:inFade .25s ease-out}
+
+/* app bar */
+.appbar{display:flex;align-items:center;gap:6px;padding:10px 8px 6px;min-height:64px}
+.appbar .h2{flex:1}
+.tabhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:20px 20px 12px}
+
+/* sheet & snack */
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:9;background:var(--sc);border-radius:32px 32px 0 0;padding:10px 24px 32px;display:flex;flex-direction:column;gap:16px;max-height:88%;overflow-y:auto;animation:sheetIn .45s var(--spring)}
+.sheet .handle{width:36px;height:4px;border-radius:2px;background:var(--outline);align-self:center;margin-bottom:6px;opacity:.6}
+@keyframes sheetIn{from{transform:translateY(40px);opacity:0}}
+.snack{position:absolute;left:16px;right:16px;bottom:100px;z-index:12;background:var(--on);color:var(--surface);padding:14px 18px;border-radius:16px;font-weight:600;font-size:14px;animation:sheetIn .35s var(--spring)}
+.snack.nonav{bottom:24px}
+
+/* misc */
+.card{background:var(--sc);border-radius:28px;padding:20px}
+.stat{flex:1;background:var(--sc);border-radius:24px;padding:16px;display:flex;flex-direction:column;gap:2px}
+.stat b{font:800 32px/1 var(--display);letter-spacing:-.03em}
+.stats{display:flex;gap:8px;padding:0 16px}
+.kv{display:flex;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--outv)}
+.kv:last-child{border-bottom:0}
+.kv span:first-child{color:var(--onv);flex-shrink:0}
+.kv span:last-child{font-weight:600;text-align:right}
+.tba-text{color:var(--onv);font-style:italic;font-weight:500 !important}
+.trailer{position:relative;aspect-ratio:16/9;border-radius:28px;overflow:hidden;border:0;width:100%;padding:0;background:#16132E;display:block}
+.trailer > svg{position:absolute;inset:0;width:100%;height:100%}
+.trailer .play{position:absolute;left:50%;top:50%;width:76px;height:76px;transform:translate(-50%,-50%);transition:transform .35s var(--spring)}
+.trailer:active .play{transform:translate(-50%,-50%) scale(.9) rotate(20deg)}
+.trailer .cap{position:absolute;left:16px;bottom:14px;color:#fff;font-weight:700;font-size:14px}
+.empty{margin:24px 20px;padding:28px 22px;border-radius:32px;background:var(--sc);display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.pro-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px 4px 6px;border-radius:14px;background:var(--pc);color:var(--onpc);font-weight:700;font-size:13px}
+.pro-badge svg{width:18px;height:18px}
+.lock{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:9px;background:var(--pc);color:var(--onpc)}
+.lock svg{width:13px;height:13px}
+.swatches{display:flex;gap:12px}
+.swatch{width:52px;height:52px;border-radius:18px;border:3px solid transparent;position:relative;transition:border-radius .35s var(--spring)}
+.swatch.on{border-color:var(--on);border-radius:26px}
+.swatch svg{position:absolute;inset:0;margin:auto;width:20px;height:20px}
+.timeline-date{width:52px;height:56px;border-radius:18px;background:var(--pc);color:var(--onpc);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.timeline-date b{font:800 22px/1 var(--display)}
+.timeline-date span{font-size:11px;font-weight:700}
+.codebox{font:600 15px/1.2 ui-monospace,"Cascadia Mono",Menlo,monospace;letter-spacing:.02em}
+.widget{border-radius:28px;background:var(--pc);color:var(--onpc);padding:16px 18px;display:flex;gap:14px;align-items:center}
+.cookie-wrap{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cookie-wrap > svg{position:absolute;inset:0;width:100%;height:100%}
+.cookie-wrap > span{position:relative;font:800 24px/1 var(--display)}
+.spacer{height:12px}
+
+/* section headers inside grouped lists */
+.grouphead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:22px 22px 8px;font:700 12px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--onv)}
+.grouphead span:last-child{letter-spacing:0;text-transform:none;font-size:13px;font-weight:600}
+
+/* onboarding steps */
+.steps{display:flex;gap:6px}
+.steps i{flex:1;height:5px;border-radius:3px;background:var(--track);transition:background .35s var(--spring)}
+.steps i.on{background:var(--pc)}
+.onbwrap{display:flex;flex-direction:column;height:100%;padding:18px 24px 28px;gap:20px}
+.onbbody{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:20px}
+.pickgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pick{display:flex;align-items:center;gap:10px;min-height:62px;padding:12px 14px;border:1.5px solid var(--outv);border-radius:20px;background:transparent;font-weight:700;font-size:15px;text-align:left;transition:border-radius .35s var(--spring),background .2s,border-color .2s}
+.pick .pi{width:34px;height:34px;border-radius:12px;background:var(--sch);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pick .pi svg{width:19px;height:19px}
+.pick.on{background:var(--sec);color:var(--onsec);border-color:transparent;border-radius:28px}
+.pick.on .pi{background:var(--pc);color:var(--onpc)}
+
+/* notification preview card */
+.notifmock{background:var(--surface);border:1px solid var(--outv);border-radius:20px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+.notifmock .nm-ic{width:28px;height:28px;border-radius:9px;background:var(--pc);color:var(--onpc);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.notifmock .nm-ic svg{width:17px;height:17px}
+.notifmock b{display:block;font-size:14px}
+.notifmock p{margin:2px 0 0;font-size:13px;color:var(--onv)}
+
+/* quick actions on details */
+.quick{display:flex;gap:8px;padding:16px 20px 0}
+.quick .btn{flex:1;min-width:0}
+.quick .ib{border:1px solid var(--outv)}
+.quick .ib.on{border-color:transparent}
+
+/* free vs Pro comparison */
+.cmp{display:grid;grid-template-columns:1fr 60px 60px;align-items:center}
+.cmp > *{padding:12px 0;border-bottom:1px solid var(--outv)}
+.cmp .ch{font:700 11px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--onv);text-align:center}
+.cmp .cv{text-align:center;font-weight:700}
+.cmp .cv svg{width:18px;height:18px}
+.cmp .cv.no{color:var(--onv);opacity:.5}
+.cmp .cv.yes{color:var(--ok)}
+.cmp > :nth-last-child(-n+3){border-bottom:0}
+
+/* release calendar */
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 14px}
+.caldow{text-align:center;font:700 11px/1 var(--body);color:var(--onv);padding:6px 0}
+.calday{position:relative;aspect-ratio:1;border:0;background:transparent;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-weight:600;font-size:14px;color:var(--on);transition:border-radius .3s var(--spring),background .2s}
+.calday.mute{color:var(--outline)}
+.calday.has{background:var(--sc)}
+.calday.on{background:var(--primary);color:var(--onprimary);border-radius:22px}
+.calday .dot{width:5px;height:5px;border-radius:50%;background:var(--pc)}
+.calday.on .dot{background:var(--onprimary)}
+.calnav{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 12px}
+.calnav b{font:800 20px/1.1 var(--display);letter-spacing:-.02em}
+
+/* misc added */
+.tip{margin:0 16px;padding:16px 18px;border-radius:24px;background:var(--terc);color:var(--onterc);display:flex;gap:12px;align-items:flex-start}
+.tip svg{width:22px;height:22px;flex-shrink:0;margin-top:1px}
+.tip b{display:block;margin-bottom:2px}
+.recent-chip{display:inline-flex;align-items:center;gap:2px;height:38px;padding:0 6px 0 14px;border:1px solid var(--outv);border-radius:19px;background:transparent;font-weight:600;font-size:14px;white-space:nowrap}
+.recent-chip .x{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:14px;border:0;background:transparent;color:var(--onv)}
+.recent-chip .x svg{width:16px;height:16px}
+.radio{display:flex;align-items:center;gap:14px;width:100%;min-height:56px;padding:10px 4px;border:0;background:transparent;text-align:left;font-weight:600;font-size:16px;border-bottom:1px solid var(--outv)}
+.radio:last-of-type{border-bottom:0}
+.radio .dotbox{width:22px;height:22px;border-radius:11px;border:2px solid var(--outline);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.radio[aria-checked="true"] .dotbox{border-color:var(--primary)}
+.radio[aria-checked="true"] .dotbox::after{content:"";width:12px;height:12px;border-radius:6px;background:var(--primary)}
+.radio .grow{flex:1;min-width:0}
+.radio .muted{display:block;font-weight:500;font-size:13px}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none !important;transition:none !important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <main class="device" aria-label="WishPlay app preview"><div id="app"></div></main>
+  <aside class="demo" aria-label="Prototype controls">
+    <div class="demo-brand" id="demoLogo"></div>
+    <p>Tap through the phone like the real app. Game covers and logos here are placeholders; the finished app pulls real ones from IGDB.</p>
+    <div>
+      <h3>View the app as</h3>
+      <div class="seg" id="roleSeg"></div>
+    </div>
+    <div>
+      <h3>Jump to</h3>
+      <div class="row">
+        <button class="chip" data-act="jump" data-arg="onboard">Welcome screen</button>
+        <button class="chip" data-act="jump" data-arg="calendar">Release calendar</button>
+        <button class="chip" data-act="jump" data-arg="cap">Free limit reached</button>
+        <button class="chip" data-act="jump" data-arg="pro">Get Pro</button>
+        <button class="chip" data-act="jump" data-arg="admin">Admin panel</button>
+      </div>
+    </div>
+  </aside>
+</div>
+<script>
+(function(){
+const TODAY=new Date('2026-09-30T00:00:00');
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONFULL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOW=['M','T','W','T','F','S','S'];
+const CAP=25, PRICE=2.99;
+/* the real app fetches these from the backend, so they can change without an app update */
+const BKASH='01978900129', BDT=349;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const days=d=>Math.round((new Date(d+'T00:00:00')-TODAY)/864e5);
+const fmt=d=>{const x=new Date(d+'T00:00:00');return MON[x.getMonth()]+' '+x.getDate()};
+const fmtY=d=>fmt(d)+', '+new Date(d+'T00:00:00').getFullYear();
+
+/* ---------- icons ---------- */
+const P={
+list:'M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01',
+search:'M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM21 21l-4.35-4.35',
+bell:'M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0',
+belloff:'M13.73 21a2 2 0 0 1-3.46 0M18.6 13A17 17 0 0 1 18 8M6.3 6.3A6 6 0 0 0 6 8c0 7-3 9-3 9h14M18 8a6 6 0 0 0-9.3-5M3 3l18 18',
+user:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8z',
+plus:'M12 5v14M5 12h14',back:'M19 12H5M12 19l-7-7 7-7',check:'M20 6L9 17l-5-5',
+lock:'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',cal:'M3 5h18v16H3zM16 3v4M8 3v4M3 10h18',
+edit:'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',crown:'M3 7l4 5 5-7 5 7 4-5v11H3z',
+gift:'M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z',
+tag:'M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8zM7 7h.01',
+copy:'M9 9h13v13H9zM5 15H2V2h13v3',x:'M18 6L6 18M6 6l12 12',chev:'M9 18l6-6-6-6',
+sync:'M21 12a9 9 0 0 1-15.5 6.3L3 16M3 12a9 9 0 0 1 15.5-6.3L21 8M21 3v5h-5M3 21v-5h5',
+grid:'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z',shield:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+download:'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3',
+clock:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 7v5l3 3',monitor:'M2 4h20v13H2zM8 21h8M12 17v4',
+drive:'M22 12H2M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1zM6 16h.01M10 16h.01',
+down:'M23 18l-9.5-9.5-5 5L1 6M17 18h6v-6',moved:'M5 12h14M13 6l6 6-6 6',
+card:'M2 5h20v14H2zM2 10h20',phone:'M7 2h10v20H7zM11 18h2',logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
+palette:'M12 22a10 10 0 1 1 10-10c0 3-2.5 4-4.5 4H15a2 2 0 0 0-1.5 3.3A2 2 0 0 1 12 22zM7.5 11h.01M10.5 7h.01M15.5 7.5h.01',
+info:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM12 16v-4M12 8h.01',sparkle:'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z',
+share:'M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M12 16V3M8 7l4-4 4 4',
+sort:'M3 6h15M6 12h12M10 18h4M19 14l2 2-2 2',trash:'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6',
+chevleft:'M15 18l-6-6 6-6',battery:'M2 7h16v10H2zM22 11v2M6 11v2M10 11v2',
+pc:'M3 4h18v12H3zM8 20h8M12 16v4',
+ps:'M6 9h12a4 4 0 0 1 4 4v1.5a3 3 0 0 1-5.4 1.8L15.5 15h-7l-1.1 1.3A3 3 0 0 1 2 14.5V13a4 4 0 0 1 4-4zM7 11.5v2.5M5.75 12.75h2.5M16 12.5h.01M18 14.5h.01',
+xbox:'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM6.5 5.5c3 1.5 8 8.5 11 13M17.5 5.5c-3 1.5-8 8.5-11 13',
+sw2:'M9 3H6.5A3.5 3.5 0 0 0 3 6.5v11A3.5 3.5 0 0 0 6.5 21H9zM15 3h2.5A3.5 3.5 0 0 1 21 6.5v11a3.5 3.5 0 0 1-3.5 3.5H15zM11 3h2v18h-2zM6.5 8h.01M17.5 15h.01',
+apple:'M16.5 13.2c0-2 1.6-3 1.7-3.1-1-1.4-2.4-1.6-2.9-1.6-1.3-.1-2.5.7-3.1.7-.6 0-1.6-.7-2.7-.7C8 8.5 6.6 9.3 5.9 10.6c-1.4 2.4-.4 6 1 8 .7.9 1.5 2 2.6 2 1 0 1.4-.6 2.7-.6 1.2 0 1.6.6 2.7.6s1.8-.9 2.5-1.9c.5-.7.8-1.4 1-2.2-2.2-.8-1.9-3.2-1.9-3.3zM14.2 6.3c.6-.7 1-1.7.9-2.7-.9 0-1.9.6-2.5 1.3-.5.6-1 1.6-.9 2.6 1 .1 2-.5 2.5-1.2z'
+};
+const ic=(n,sw=2)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P[n]}"/></svg>`;
+const G_LOGO='<svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>';
+const STAR='M56 69 L59.23 77.55 L68.36 77.98 L61.23 83.70 L63.64 92.52 L56 87.5 L48.36 92.52 L50.77 83.70 L43.64 77.98 L52.77 77.55 Z';
+const brandIcon=s=>`<svg width="${s}" height="${s}" viewBox="0 0 160 160" aria-hidden="true"><rect width="160" height="160" rx="36" fill="#FFB938"/><rect x="24" y="50" width="112" height="64" rx="32" fill="#16132E"/><path d="${STAR}" fill="#FFB938" stroke="#FFB938" stroke-width="2" stroke-linejoin="round"/><circle cx="100" cy="75" r="7" fill="#FFB938"/><circle cx="114" cy="90" r="7" fill="#FFB938"/></svg>`;
+
+/* expressive shapes */
+function cookie(n,amp){let d='';for(let i=0;i<=360;i+=3){const t=i*Math.PI/180,r=50*(1-amp+amp*Math.cos(n*t));d+=(i?'L':'M')+(50+r*Math.cos(t)).toFixed(1)+' '+(50+r*Math.sin(t)).toFixed(1)}return d+'Z'}
+const SHAPES={c4:cookie(4,.1),c6:cookie(6,.07),c9:cookie(9,.06),c12:cookie(12,.04),circle:cookie(1,0),sq:'M30 2h40a28 28 0 0 1 28 28v40a28 28 0 0 1-28 28H30A28 28 0 0 1 2 70V30A28 28 0 0 1 30 2z'};
+const shape=(k,fill)=>`<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${SHAPES[k]}" fill="${fill}"/></svg>`;
+let waveId=0;
+function wave(p,w=300){
+  const h=18,amp=3.2,wl=16,mid=h/2,px=Math.max(10,Math.min(w-14,p*w));let d=`M0 ${mid}`;
+  for(let x=2;x<=w+wl;x+=2)d+=` L${x} ${(mid+amp*Math.sin(x/wl*2*Math.PI)).toFixed(2)}`;
+  const id='wc'+(waveId++);
+  return `<svg class="wave" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><defs><clipPath id="${id}"><rect x="0" y="0" width="${px}" height="${h}"/></clipPath></defs><g clip-path="url(#${id})"><path class="wave-path" d="${d}" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></g><line x1="${px+9}" y1="${mid}" x2="${w-3}" y2="${mid}" stroke="currentColor" stroke-opacity=".28" stroke-width="4" stroke-linecap="round"/><circle cx="${w-3}" cy="${mid}" r="3" fill="currentColor"/></svg>`;
+}
+
+/* ---------- data ---------- */
+const MOBREQ={Android:'Android 10 or later, 4 GB RAM',iOS:'iOS 16 or later'};
+const games=[
+{id:'pk',title:'Pocket Kingdoms',dev:'Lanternfish Studio',hue:'#1F7A6E',shape:'c9',platforms:{Android:'2026-10-02',iOS:'2026-10-02'},size:{Android:'1.8 GB',iOS:'2.1 GB'},progress:.94,about:'Build a tiny kingdom and defend it from pocket-sized dragons. Short sessions, deep strategy.',trailer:true,inList:true,alert:true},
+{id:'nd',title:'Neon Drift 2',dev:'Velocity Forge',hue:'#B8325F',shape:'c4',platforms:{PC:'2026-10-09',Android:'2026-10-09',iOS:'2026-10-23'},size:{PC:'38 GB',Android:'3.4 GB',iOS:null},progress:.82,about:'Arcade street racing across a city that rebuilds itself every night.',trailer:true,reqs:{min:{OS:'Windows 10 64-bit',CPU:'Core i5-8400 or Ryzen 5 2600',GPU:'GTX 1060 6 GB or RX 580',RAM:'8 GB'},rec:{OS:'Windows 11',CPU:'Core i7-10700 or Ryzen 7 3700X',GPU:'RTX 3060 or RX 6700 XT',RAM:'16 GB'}},price:{store:'Steam',now:'$29.99'},inList:true,alert:true},
+{id:'sf',title:'Starfall Odyssey',dev:'Northlight Interactive',hue:'#3A48B8',shape:'c12',platforms:{PC:'2026-11-13',PS5:'2026-11-13','Xbox Series':'2026-11-13'},size:{PC:'120 GB',PS5:'98 GB','Xbox Series':null},progress:.61,about:'A space opera RPG where every star on the map is a place you can land.',trailer:true,reqs:{min:{OS:'Windows 10 64-bit',CPU:'Core i7-8700 or Ryzen 5 3600',GPU:'RTX 2070 or RX 5700',RAM:'16 GB'},rec:{OS:'Windows 11',CPU:'Core i7-12700 or Ryzen 7 5800X',GPU:'RTX 4070 or RX 7800 XT',RAM:'32 GB'}},price:{store:'Steam',now:'$47.99',was:'$59.99'},inList:true,alert:true},
+{id:'ic',title:'Iron Circuit: Rebellion',dev:'Brassworks',hue:'#A3441F',shape:'sq',platforms:{PS5:'2026-12-03','Xbox Series':'2026-12-03',PC:'2026-12-03'},moved:'2026-10-22',size:{},progress:.45,about:'Squad-based mech tactics. Rebuild your machines between missions from what you salvage.',trailer:true,reqs:{min:{OS:'Windows 10 64-bit',CPU:'Core i5-10400 or Ryzen 5 3600',GPU:'RTX 2060 or RX 6600',RAM:'12 GB'},rec:null},price:{store:'Steam',now:'$69.99'},inList:true,alert:true},
+{id:'hk',title:'Hollow Keep',dev:'Mossgate Games',hue:'#4A6630',shape:'c6',platforms:{'Switch 2':null,PC:null},tba:'2027',size:{},progress:.2,about:'A hand-drawn castle crawler. The developer has shown one short teaser so far.',trailer:false,inList:true,alert:true},
+{id:'tb',title:'Tidebound',dev:'Saltwater Collective',hue:'#17618F',shape:'circle',platforms:{Android:'2026-09-18'},size:{Android:'900 MB'},progress:1,about:'Sail between drowned islands and trade stories for supplies.',trailer:true,inList:true,alert:false},
+{id:'mr',title:'Mango Rush',custom:true,hue:'#8A5A00',shape:'c9',platforms:{Android:'2026-12-20'},size:{},progress:.3,note:'Spotted it on the developer\'s X account. Not on any store yet.',inList:true,alert:true},
+{id:'lt',title:'Lumen Tactics',dev:'Paperlight',hue:'#5B3FA8',shape:'c4',platforms:{PC:'2027-02-18','Switch 2':'2027-02-18'},size:{},progress:.3,about:'Turn-based puzzles lit by a lantern you can only carry so far.',trailer:true,inList:false,alert:true},
+{id:'sr',title:'Skyforge Racers',dev:'Tallwind',hue:'#0F6A80',shape:'c12',platforms:{PS5:'2026-11-27',PC:'2026-11-27'},size:{PS5:'44 GB'},progress:.5,about:'Build a flying car in the garage, then race it through storm fronts.',trailer:true,inList:false,alert:true},
+{id:'de',title:'Dust & Ember',dev:'Kiln House',hue:'#8C3B2E',shape:'c6',platforms:{Android:null,iOS:null},size:{},progress:.1,about:'A desert survival game for phones. No date has been announced.',trailer:false,inList:false,alert:true}
+];
+const HUES=['#1F7A6E','#B8325F','#3A48B8','#A3441F','#5B3FA8','#0F6A80'];
+const PSHORT={PC:'PC',PS5:'PS5','Xbox Series':'Xbox','Switch 2':'Switch 2',Android:'Android',iOS:'iOS'};
+const ALLPLATS=['PC','PS5','Xbox Series','Switch 2','Android','iOS'];
+const PICON={PC:'pc',PS5:'ps','Xbox Series':'xbox','Switch 2':'sw2',Android:'phone',iOS:'apple'};
+const POPULAR=['Starfall Odyssey','Neon Drift 2','Hollow Keep','Iron Circuit','Lumen Tactics'];
+const byId=id=>games.find(g=>g.id===id);
+const earliest=g=>Object.values(g.platforms).filter(Boolean).sort()[0]||null;
+function status(g){const d=earliest(g);if(!d)return'tba';return days(d)<=0?'out':'upcoming'}
+function whenLabel(g){const d=earliest(g);if(!d)return g.tba?'TBA '+g.tba:'Date TBA';const n=days(d);if(n<0)return'Out now';if(n===0)return'Today';if(n===1)return'Tomorrow';if(n<=14)return'In '+n+' days';return fmt(d)}
+function whenClass(g){const s=status(g);if(s==='tba')return'tba';if(s==='out')return'out';return days(earliest(g))<=14?'soon':''}
+function relPhrase(g){const n=days(earliest(g));if(n===0)return'Releases today';if(n===1)return'Releases tomorrow';if(n<=14)return'Releases in '+n+' days';return'Releases '+fmt(earliest(g))}
+const initials=t=>t.replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const monthKey=d=>d?d.slice(0,7):'tba';
+const monthLabel=k=>k==='tba'?'Date to be announced':MONFULL[+k.slice(5,7)-1]+' '+k.slice(0,4);
+const SORTS=[['date','Nearest release','Out now goes last'],['added','Recently added','Newest on your list first'],['name','Name A to Z','Alphabetical']];
+const sortLabel=()=>(SORTS.find(s=>s[0]===S.sort)||SORTS[0])[1];
+function sortList(a,b){
+  if(S.sort==='name')return a.title.localeCompare(b.title);
+  if(S.sort==='added')return b.ord-a.ord;
+  const ea=earliest(a)||'9999-99',eb=earliest(b)||'9999-99';
+  const sa=status(a)==='out'?1:0,sb=status(b)==='out'?1:0;
+  return sa-sb||(ea<eb?-1:ea>eb?1:0);
+}
+/* group a sorted list into [label, games[]] pairs; only the date sort groups by month */
+function groupList(list){
+  if(S.sort!=='date')return [[null,list]];
+  const out=[];let cur=null;
+  list.forEach(g=>{
+    const d=earliest(g);
+    const k=!d?'tba':(days(d)<0?'out':monthKey(d));
+    if(!cur||cur[0]!==k){cur=[k,[]];out.push(cur)}
+    cur[1].push(g);
+  });
+  return out.map(([k,gs])=>[k==='out'?'Already out':monthLabel(k),gs]);
+}
+
+/* ---------- state ---------- */
+games.forEach((g,i)=>g.ord=i);
+let ordSeq=games.length;
+const S={role:'free',theme:'system',accent:'gold',stack:[{s:'onboard'}],tab:'wishlist',filter:'all',sort:'date',plat:'All',query:'',fab:false,sheet:null,snack:'',reqMode:'min',selPlat:{},adminType:'free',redeemMsg:null,bkErr:false,codeQ:'',delOk:false,
+onbStep:0,prefPlats:[],notifAsked:false,notifOn:false,batteryTipSeen:false,
+recent:['Starfall Odyssey','mech tactics'],calMonth:'2026-10',calDay:null,
+alerts:{release:true,countdown:true,lead:'1 week',changes:true,price:true},
+codes:[{code:'WP-GIFT-7K2Q',type:'free',uses:3,max:10,exp:'2026-12-31',on:true},{code:'WP-EID20',type:'pct',pct:20,uses:11,max:100,exp:'2026-10-15',on:true},{code:'WP-LAUNCH50',type:'pct',pct:50,uses:50,max:50,exp:'2026-09-01',on:false}],
+pending:[{trx:'BK7X4Q2M9A',from:'017••••4821',when:'12 min ago'},{trx:'BK3P8R1C6D',from:'019••••0917',when:'2 hours ago'}],
+redeemed:14};
+const USERS={guest:{name:'Guest',email:'Not signed in'},free:{name:'Nabila Karim',email:'nabila.k@gmail.com'},pro:{name:'Nabila Karim',email:'nabila.k@gmail.com'},admin:{name:'Liad',email:'hyathis.x@gmail.com'}};
+const isPro=()=>S.role==='pro'||S.role==='admin';
+const listGames=()=>games.filter(g=>g.inList);
+const top=()=>S.stack[S.stack.length-1];
+let lastKey='',dir='fade',snackTimer=null;
+
+/* ---------- pieces ---------- */
+const logo=(g,size=52)=>`<span class="logo" style="width:${size}px;height:${size}px">${shape(g.shape,g.hue)}<span style="font-size:${Math.round(size*.34)}px">${esc(initials(g.title))}</span></span>`;
+function cover(g){
+  return `<svg viewBox="0 0 400 236" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="400" height="236" fill="${g.hue}"/>
+  <g transform="translate(250 -70) scale(2.4)"><path d="${SHAPES[g.shape]}" fill="#fff" fill-opacity=".13"/></g>
+  <g transform="translate(-40 120) scale(1.5)"><path d="${SHAPES.c12}" fill="#000" fill-opacity=".14"/></g>
+  <g transform="translate(300 110) scale(.9)"><path d="M50 8l11 29 31 2-24 19 8 30-26-17-26 17 8-30L8 39l31-2z" fill="#fff" fill-opacity=".2"/></g>
+</svg>`;
+}
+const sw=(on,act,arg,label,dis)=>`<button class="sw" role="switch" aria-checked="${on}" aria-label="${esc(label)}" data-act="${act}" data-arg="${arg||''}" ${dis?'disabled':''}></button>`;
+const lockTag=()=>`<span class="lock">${ic('lock',2.5)}Pro</span>`;
+const platText=g=>Object.keys(g.platforms).map(p=>PSHORT[p]).join(', ');
+
+function gameRow(g){
+  const sub=g.moved?`<span class="tag">${ic('moved',2.5)}Moved to ${fmt(earliest(g))}</span>`:(g.custom?`<span class="tag">${ic('edit',2.5)}Custom</span> ${esc(platText(g))}`:esc(platText(g)));
+  return `<button class="li" data-act="open" data-arg="${g.id}">${logo(g)}<span class="li-main"><span class="li-title">${esc(g.title)}</span><span class="li-sub">${sub}</span></span><span class="when ${whenClass(g)}">${whenLabel(g)}</span></button>`;
+}
+
+/* ---------- screens ---------- */
+function onboard(){
+  if(S.onbStep===0)return `<div class="screen" style="justify-content:space-between;padding:56px 24px 36px">
+  <div style="display:flex;flex-direction:column;gap:28px">
+    <div class="cookie-wrap" style="width:132px;height:132px">${shape('c9','var(--sec)')}${brandIcon(88)}</div>
+    <h1 class="display" style="font-size:44px">Never miss<br>a game drop.</h1>
+    <p class="muted" style="margin:0;font-size:17px;max-width:30ch">Save the games you want, on any platform, and get a heads-up before they release.</p>
+    <p class="muted small" style="margin:0">Takes about 30 seconds to set up. You can change all of it later.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <button class="btn lg filled block" data-act="google">${G_LOGO}<span>Continue with Google</span></button>
+    <button class="btn lg tonal block" data-act="guest">Continue as guest</button>
+    <p class="muted small" style="margin:6px 0 0;text-align:center">As a guest, your list stays on this phone. Sign in any time to sync it.</p>
+  </div></div>`;
+
+  const bar=`<div style="display:flex;align-items:center;gap:12px">
+    <button class="ib" data-act="onb-back" aria-label="Back">${ic('back')}</button>
+    <div class="steps" style="flex:1" role="progressbar" aria-valuenow="${S.onbStep}" aria-valuemin="1" aria-valuemax="2" aria-label="Setup step ${S.onbStep} of 2"><i class="on"></i><i class="${S.onbStep>1?'on':''}"></i></div>
+    <button class="btn textbtn" data-act="onb-skip">Skip</button></div>`;
+
+  if(S.onbStep===1){
+    const n=S.prefPlats.length;
+    return `<div class="screen"><div class="onbwrap">${bar}
+    <div class="onbbody">
+      <div><h1 class="h1">Which platforms do you play on?</h1>
+      <p class="muted" style="margin:8px 0 0">Search and your wishlist start filtered to these. Pick as many as you like.</p></div>
+      <div class="pickgrid" role="group" aria-label="Platforms you play on">${ALLPLATS.map(p=>`<button class="pick ${S.prefPlats.includes(p)?'on':''}" data-act="onb-plat" data-arg="${p}" aria-pressed="${S.prefPlats.includes(p)}"><span class="pi">${ic(PICON[p])}</span>${PSHORT[p]}</button>`).join('')}</div>
+    </div>
+    <button class="btn lg gold block" data-act="onb-next">${n?'Continue with '+n+' platform'+(n===1?'':'s'):'Continue'}</button>
+    </div></div>`;
+  }
+
+  const lead=['1 day','3 days','1 week'];
+  return `<div class="screen"><div class="onbwrap">${bar}
+  <div class="onbbody">
+    <div><h1 class="h1">How early should we tap you?</h1>
+    <p class="muted" style="margin:8px 0 0">You always get an alert on release day. This is the extra heads-up before it.</p></div>
+    <div class="group" style="margin:0">${lead.map(l=>`<button class="li" data-act="onb-lead" data-arg="${l}" role="radio" aria-checked="${S.alerts.lead===l}" style="min-height:64px"><span class="li-main"><span class="li-title">${l} before</span><span class="li-sub">${l==='1 day'?'Just enough time to clear an evening':l==='3 days'?'Time to pre-load or pre-order':'Good for big releases you plan around'}</span></span>${S.alerts.lead===l?`<span style="color:var(--ok)">${ic('check',3)}</span>`:''}</button>`).join('')}</div>
+    <div class="notifmock"><span class="nm-ic">${ic('bell',2.5)}</span><span><b>Starfall Odyssey drops in ${S.alerts.lead}</b><p>Nov 13 on PC, PS5 and Xbox</p></span></div>
+  </div>
+  <button class="btn lg gold block" data-act="onb-done">Start my wishlist</button>
+  </div></div>`;
+}
+
+function wishlistTab(){
+  const all=listGames();
+  const up=all.filter(g=>status(g)==='upcoming'&&g.alert).sort((a,b)=>earliest(a)<earliest(b)?-1:1)[0];
+  const f=S.filter;
+  const shown=all.filter(g=>f==='all'||status(g)===f).sort(sortList);
+  const count=k=>all.filter(g=>k==='all'||status(g)===k).length;
+  const u=USERS[S.role];
+  let hero='';
+  if(up){const n=days(earliest(up));hero=`<button class="hero" data-act="open" data-arg="${up.id}" aria-label="Next release: ${esc(up.title)} in ${n} days">
+    <span class="hero-top"><span><span class="small" style="font-weight:700">Next drop</span><br><span class="hero-num">${n}</span><span class="hero-unit">${n===1?'day':'days'}</span></span>${logo(up,64)}</span>
+    <span><span style="display:block;font:800 22px/1.1 var(--display);letter-spacing:-.02em">${esc(up.title)}</span><span class="small" style="font-weight:600">${fmt(earliest(up))} on ${esc(platText(up))}</span></span>
+    ${wave(up.progress)}</button>`;}
+  const chip=(k,l)=>`<button class="chip ${f===k?'on':''}" data-act="filter" data-arg="${k}" aria-pressed="${f===k}">${f===k?ic('check',2.5):''}${l} <span style="opacity:.7">${count(k)}</span></button>`;
+  const capLine=!isPro()?`<div class="sec" style="padding-top:18px"><button class="row-li" data-act="pro" style="background:transparent;border:1.5px dashed var(--outv);border-radius:24px"><span class="grow"><b>${all.length} of ${CAP} games</b><span class="muted small">Free lists hold up to ${CAP}. Go unlimited with Pro.</span></span>${ic('chev')}</button></div>`:'';
+  /* first-run empty list reads differently from an empty filter */
+  if(!all.length)return `<div class="tabhead"><div><h1 class="display">My wishlist</h1><p class="muted" style="margin:6px 0 0">Nothing on it yet</p></div>
+    <button class="ib" data-act="tab" data-arg="profile" aria-label="Your profile" style="width:52px;height:52px"><span class="cookie-wrap" style="width:48px;height:48px">${shape('c9','var(--sec)')}<span style="font-size:17px;color:var(--onsec)">${S.role==='guest'?ic('user'):esc(initials(u.name))}</span></span></button></div>
+  <div class="empty" style="align-items:center;text-align:center;padding:36px 22px">
+    <div class="cookie-wrap" style="width:108px;height:108px;align-self:center">${shape('c9','var(--sec)')}<span style="color:var(--onsec)"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P.bell}"/></svg></span></div>
+    <b class="h1" style="align-self:center">Add the first game<br>you're waiting on</b>
+    <p class="muted" style="margin:0">Search 300,000+ games, or add one yourself if it's too new for any database. We'll watch the date from there.</p>
+    <button class="btn lg gold block" data-act="tab" data-arg="search">${ic('search')}Search games</button>
+    <button class="btn textbtn block" data-act="fab-custom">${ic('edit')}Add a custom game</button>
+  </div>`;
+
+  const groups=groupList(shown);
+  return `<div class="tabhead"><div><h1 class="display">My wishlist</h1><p class="muted" style="margin:6px 0 0">${all.length} games you're waiting on</p></div>
+    <div style="display:flex;align-items:center;gap:2px">
+      <button class="ib" data-act="share-list" aria-label="Share your wishlist">${ic('share')}</button>
+      <button class="ib" data-act="tab" data-arg="profile" aria-label="Your profile" style="width:52px;height:52px"><span class="cookie-wrap" style="width:48px;height:48px">${shape('c9',isPro()?'var(--pc)':'var(--sec)')}<span style="font-size:17px;color:${isPro()?'var(--onpc)':'var(--onsec)'}">${S.role==='guest'?ic('user'):esc(initials(u.name))}</span></span></button>
+    </div></div>
+  ${hero}
+  <div class="chips" style="margin:18px 0 12px" role="group" aria-label="Filter your list">${chip('all','All')}${chip('upcoming','Upcoming')}${chip('out','Out now')}${chip('tba','Date TBA')}</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 20px 8px">
+    <span class="muted small">${shown.length} shown</span>
+    <button class="chip" data-act="sort-open" aria-haspopup="dialog">${ic('sort',2.5)}${sortLabel()}</button>
+  </div>
+  ${shown.length?groups.map(([label,gs])=>`${label?`<div class="grouphead"><span>${esc(label)}</span><span>${gs.length}</span></div>`:''}<div class="group">${gs.map(gameRow).join('')}</div>`).join(''):`<div class="empty"><b class="h2">Nothing in this filter</b><p class="muted" style="margin:0">You have ${all.length} games on your list, but none of them are ${f==='out'?'out yet':f==='tba'?'waiting on a date':'upcoming'}.</p><button class="btn tonal" data-act="filter" data-arg="all">Show all ${all.length}</button></div>`}
+  ${capLine}`;
+}
+
+function searchTab(){
+  const pl=['All',...ALLPLATS];
+  return `<div class="tabhead" style="padding-bottom:0"><h1 class="display">Find games</h1></div>
+  <label class="searchbar">${ic('search')}<input id="q" type="text" enterkeyhint="search" placeholder="Search any game" value="${esc(S.query)}" aria-label="Search games" autocomplete="off"><button class="ib" data-act="clear-q" aria-label="Clear search">${ic('x')}</button></label>
+  <div class="chips" style="margin-bottom:14px" role="group" aria-label="Platform">${pl.map(p=>`<button class="chip ${S.plat===p?'on':''}" data-act="plat" data-arg="${p}" aria-pressed="${S.plat===p}">${S.plat===p?ic('check',2.5):''}${PSHORT[p]||p}</button>`).join('')}</div>
+  <div id="results"></div>`;
+}
+function resultsHTML(){
+  const q=S.query.trim().toLowerCase();
+  let pool=games.filter(g=>!g.custom&&(S.plat==='All'||g.platforms.hasOwnProperty(S.plat)));
+  if(q)pool=pool.filter(g=>g.title.toLowerCase().includes(q));
+  else pool=pool.filter(g=>status(g)!=='out');
+  /* before typing: what you looked for last, and what other players are following */
+  const preamble=q?'':`${S.recent.length?`<div class="grouphead" style="padding-top:8px"><span>Recent searches</span><button class="textbtn btn" style="height:30px;padding:0 6px;letter-spacing:0;text-transform:none" data-act="clear-recent">Clear all</button></div>
+  <div class="chips" style="padding-bottom:6px">${S.recent.map((r,i)=>`<span class="recent-chip"><button style="border:0;background:transparent;font:inherit;padding:0" data-act="recent" data-arg="${esc(r)}">${esc(r)}</button><button class="x" data-act="drop-recent" data-arg="${i}" aria-label="Remove ${esc(r)} from recent searches">${ic('x',2.5)}</button></span>`).join('')}</div>`:''}
+  <div class="grouphead"><span>Popular right now</span></div>
+  <div class="chips" style="padding-bottom:10px">${POPULAR.map(p=>`<button class="chip" data-act="recent" data-arg="${esc(p)}">${ic('sparkle',2.2)}${esc(p)}</button>`).join('')}</div>`;
+  if(!pool.length)return `${preamble}<div class="empty"><b class="h2">No match for “${esc(S.query)}”</b><p class="muted" style="margin:0">If it's too new or too niche for the database, add it yourself and set the date.</p><button class="btn gold" data-act="fab-custom">${ic('plus')}Add as a custom game</button></div>`;
+  return `${preamble}<h2 class="h2" style="padding:0 20px 10px">${q?'Results':S.plat==='All'?'Coming up across all platforms':'Coming up on '+PSHORT[S.plat]}</h2><div class="group">${pool.map(g=>`<div class="li" style="cursor:default"><button data-act="open" data-arg="${g.id}" style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;border:0;background:transparent;text-align:left;padding:0">${logo(g,48)}<span class="li-main"><span class="li-title">${esc(g.title)}</span><span class="li-sub">${esc(platText(g))} · ${whenLabel(g)}</span></span></button><button class="addbtn ${g.inList?'done':''}" data-act="add" data-arg="${g.id}" aria-label="${g.inList?'In your wishlist':'Add '+esc(g.title)+' to wishlist'}">${ic(g.inList?'check':'plus',2.5)}</button></div>`).join('')}</div>
+  <p class="muted small" style="padding:14px 20px 0">Can't find a game? <button class="textbtn btn" style="height:36px;padding:0 6px" data-act="fab-custom">Add it yourself</button></p>`;
+}
+
+function alertsTab(){
+  const up=listGames().filter(g=>g.alert&&status(g)==='upcoming').sort((a,b)=>earliest(a)<earliest(b)?-1:1);
+  const A=S.alerts;
+  const lead=['1 day','3 days','1 week'];
+  const sf=byId('sf'),ic2=byId('ic');
+  /* forward list is grouped by month so a 25-game list still reads at a glance */
+  const byMonth=[];up.forEach(g=>{const k=monthKey(earliest(g));const last=byMonth[byMonth.length-1];if(last&&last[0]===k)last[1].push(g);else byMonth.push([k,[g]])});
+  const agenda=g=>{const d=new Date(earliest(g)+'T00:00:00');return `<button class="row-li" data-act="open" data-arg="${g.id}"><span class="timeline-date"><b>${d.getDate()}</b><span>${MON[d.getMonth()]}</span></span><span class="grow"><b>${esc(g.title)}</b><span class="muted small">${relPhrase(g)} on ${esc(platText(g))}</span></span></button>`};
+  return `<div class="tabhead"><h1 class="display">Alerts</h1>
+    <button class="ib t" data-act="calendar" aria-label="Open the release calendar">${ic('cal')}</button></div>
+  <div class="sec" style="padding-top:4px;display:flex;align-items:baseline;justify-content:space-between;gap:12px"><h2 class="h2">Coming up</h2><button class="textbtn btn" style="height:34px" data-act="calendar">Calendar view</button></div>
+  ${up.length?byMonth.map(([k,gs])=>`<div class="grouphead"><span>${esc(monthLabel(k))}</span><span>${gs.length} release${gs.length===1?'':'s'}</span></div><div class="group">${gs.map(agenda).join('')}</div>`).join(''):`<div class="empty"><b class="h2">Nothing scheduled</b><p class="muted" style="margin:0">Games with a known date and the bell switched on show up here.</p></div>`}
+  <div class="sec"><h2 class="h2">Recent</h2></div>
+  <div class="group">
+    <button class="row-li" data-act="open" data-arg="ic"><span class="ic" style="background:var(--terc);color:var(--onterc)">${ic('moved')}</span><span class="grow"><b>Iron Circuit: Rebellion was delayed</b><span class="muted small">Moved from ${fmt(ic2.moved)} to ${fmt(earliest(ic2))}. Your reminders moved with it.</span></span></button>
+    ${isPro()?`<button class="row-li" data-act="open" data-arg="sf"><span class="ic" style="background:var(--okc);color:var(--ok)">${ic('down')}</span><span class="grow"><b>Starfall Odyssey is 20% off</b><span class="muted small">${sf.price.now} on ${sf.price.store}, down from ${sf.price.was}</span></span></button>`:`<button class="row-li" data-act="pro"><span class="ic">${ic('lock')}</span><span class="grow"><b>A game on your list dropped in price</b><span class="muted small">Get Pro to see price-drop alerts for PC stores.</span></span>${lockTag()}</button>`}
+    <button class="row-li" data-act="open" data-arg="tb"><span class="ic" style="background:var(--pc);color:var(--onpc)">${ic('sparkle')}</span><span class="grow"><b>Tidebound is out now</b><span class="muted small">Released ${fmt('2026-09-18')} on Android</span></span></button>
+  </div>
+  <div class="sec"><h2 class="h2">Alert me when</h2></div>
+  <div class="group">
+    <div class="row-li"><span class="grow"><b>A game releases</b><span class="muted small">On release day, at 9:00 AM</span></span>${sw(A.release,'alert','release','Release day alerts')}</div>
+    <div class="row-li" style="flex-wrap:wrap"><span class="grow"><b>A release is coming up</b><span class="muted small">A reminder before release day</span></span>${sw(A.countdown,'alert','countdown','Countdown reminders')}
+      <div class="seg" style="width:100%;margin-top:8px" role="group" aria-label="How early">${lead.map(l=>`<button class="${A.lead===l?'on':''}" data-act="lead" data-arg="${l}" aria-pressed="${A.lead===l}" ${A.countdown?'':'disabled'}>${l} before</button>`).join('')}</div></div>
+    <div class="row-li"><span class="grow"><b>A release date changes</b><span class="muted small">Delays and earlier launches</span></span>${sw(A.changes,'alert','changes','Date change alerts')}</div>
+    <div class="row-li"><span class="grow"><b>A price drops ${isPro()?'':lockTag()}</b><span class="muted small">Steam and other PC stores</span></span>${sw(isPro()&&A.price,'alert','price','Price drop alerts')}</div>
+  </div>
+  <div class="sec"><h2 class="h2">Delivery</h2></div>
+  <div class="group">
+    <button class="row-li" data-act="notif-settings"><span class="ic" style="${S.notifOn?'background:var(--okc);color:var(--ok)':'background:var(--errc);color:var(--err)'}">${ic(S.notifOn?'bell':'belloff')}</span><span class="grow"><b>Android notifications</b><span class="muted small">${S.notifOn?'Allowed. Four channels: Releases, Reminders, Date changes, Price drops.':'Blocked. No alert can reach you until you allow them.'}</span></span>${ic('chev')}</button>
+    <button class="row-li" data-act="battery"><span class="ic">${ic('battery')}</span><span class="grow"><b>Background work</b><span class="muted small">Some phones stop the daily check. Tap for the fix.</span></span>${ic('chev')}</button>
+  </div>
+  <p class="muted small" style="padding:14px 20px 0">WishPlay checks your list once a day, even when the app is closed. Reminders are scheduled on the phone, so they fire offline too.</p>`;
+}
+
+/* Release calendar: month grid with a dot on every day something lands, agenda under the selection */
+function calendarScreen(){
+  const [y,m]=S.calMonth.split('-').map(Number);
+  const first=new Date(y,m-1,1), lead=(first.getDay()+6)%7, dim=new Date(y,m,0).getDate();
+  const byDay={};
+  /* a game can land on two days when its platforms stagger, so each entry carries its own platforms */
+  listGames().forEach(g=>{Object.entries(g.platforms).forEach(([p,d])=>{
+    if(!d||d.slice(0,7)!==S.calMonth)return;
+    const n=+d.slice(8,10);const list=byDay[n]=byDay[n]||[];
+    const hit=list.find(e=>e.g===g);
+    if(hit)hit.plats.push(p);else list.push({g,plats:[p]});
+  })});
+  const sel=S.calDay&&byDay[S.calDay]?S.calDay:null;
+  const shift=n=>{const d=new Date(y,m-1+n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
+  const cells=[];
+  for(let i=0;i<lead;i++)cells.push('<span class="calday mute" aria-hidden="true"></span>');
+  for(let d=1;d<=dim;d++){
+    const has=!!byDay[d], isSel=sel===d, isToday=S.calMonth==='2026-09'&&d===30;
+    cells.push(`<button class="calday ${has?'has':''} ${isSel?'on':''}" ${has?`data-act="cal-day" data-arg="${d}"`:'disabled'} aria-label="${MONFULL[m-1]} ${d}${has?', '+byDay[d].length+' release'+(byDay[d].length===1?'':'s'):', nothing scheduled'}" aria-pressed="${isSel}"><span style="${isToday?'text-decoration:underline;text-underline-offset:3px':''}">${d}</span>${has?'<span class="dot"></span>':''}</button>`);
+  }
+  const monthGames=Object.keys(byDay).map(Number).sort((a,b)=>a-b);
+  const listFor=sel?[[sel,byDay[sel]]]:monthGames.map(d=>[d,byDay[d]]);
+  return `<div class="screen"><div class="appbar"><button class="ib" data-act="back" aria-label="Back">${ic('back')}</button><h1 class="h2">Release calendar</h1></div>
+  <div class="scroll nonav">
+    <div class="calnav">
+      <button class="ib" data-act="cal-month" data-arg="${shift(-1)}" aria-label="Previous month">${ic('chevleft')}</button>
+      <b>${MONFULL[m-1]} ${y}</b>
+      <button class="ib" data-act="cal-month" data-arg="${shift(1)}" aria-label="Next month">${ic('chev')}</button>
+    </div>
+    <div class="calgrid" aria-hidden="true">${DOW.map(d=>`<span class="caldow">${d}</span>`).join('')}</div>
+    <div class="calgrid" role="grid" aria-label="${MONFULL[m-1]} ${y}">${cells.join('')}</div>
+    <div class="grouphead"><span>${sel?MONFULL[m-1]+' '+sel:'Everything this month'}</span>${sel?`<button class="textbtn btn" style="height:30px;padding:0 6px;letter-spacing:0;text-transform:none" data-act="cal-day" data-arg="0">Show the whole month</button>`:`<span>${monthGames.length} day${monthGames.length===1?'':'s'}</span>`}</div>
+    ${monthGames.length?listFor.map(([d,gs])=>`<div class="group" style="margin-bottom:8px">${gs.map(({g,plats})=>`<button class="row-li" data-act="open" data-arg="${g.id}"><span class="timeline-date"><b>${d}</b><span>${MON[m-1]}</span></span><span class="grow"><b>${esc(g.title)}</b><span class="muted small">${esc(plats.map(p=>PSHORT[p]).join(', '))}${g.moved?' &middot; moved from '+fmt(g.moved):''}</span></span></button>`).join('')}</div>`).join(''):`<div class="empty"><b class="h2">Nothing lands in ${MONFULL[m-1]}</b><p class="muted" style="margin:0">Swipe to another month, or add more games to your list.</p><button class="btn tonal" data-act="cal-month" data-arg="${shift(1)}">Next month</button></div>`}
+    <p class="muted small" style="padding:8px 20px 0">Only games on your wishlist with a known date appear here. Games waiting on a date stay in the Date TBA filter.</p>
+  </div></div>`;
+}
+
+function profileTab(){
+  const u=USERS[S.role],guest=S.role==='guest';
+  const acc=[['gold','#FFB938'],['violet','#B9A8FF'],['teal','#6ED6C4'],['coral','#FF9E8A']];
+  const th=[['light','Light'],['dark','Dark'],['system','System']];
+  return `<div class="tabhead" style="align-items:center;justify-content:flex-start;gap:16px;padding-top:28px">
+    <span class="cookie-wrap" style="width:80px;height:80px">${shape('c12',isPro()?'var(--pc)':'var(--sec)')}<span style="color:${isPro()?'var(--onpc)':'var(--onsec)'}">${guest?ic('user'):esc(initials(u.name))}</span></span>
+    <div style="min-width:0"><h1 class="h1">${esc(u.name)}</h1><p class="muted small" style="margin:2px 0 8px">${esc(u.email)}</p>${isPro()?`<span class="pro-badge"><span class="cookie-wrap" style="width:20px;height:20px">${shape('c9','var(--onpc)')}</span>${S.role==='admin'?'Admin · Pro for life':'Pro for life'}</span>`:''}</div></div>
+  ${guest?`<div class="sec" style="padding-top:8px"><div class="card" style="display:flex;flex-direction:column;gap:12px"><b class="h2">Keep your list safe</b><p class="muted" style="margin:0">Sign in to back up your wishlist and sync it to any phone.</p><button class="btn filled" data-act="google-in">${G_LOGO}<span>Sign in with Google</span></button></div></div>`:''}
+  ${!isPro()?`<div class="sec" style="padding-top:12px"><button class="hero" data-act="pro" style="margin:0;width:100%;border-radius:32px 12px 32px 32px"><span class="hero-top"><span style="font:800 26px/1.05 var(--display);letter-spacing:-.02em">WishPlay Pro</span><span class="cookie-wrap" style="width:48px;height:48px">${shape('c9','var(--onpc)')}<span style="color:var(--pc)">${ic('crown')}</span></span></span><span style="font-weight:600">Unlimited list, price-drop alerts, themes and widgets. One payment, yours for life.</span></button></div>`:''}
+  <div class="sec"><h2 class="h2">Look and feel</h2>
+    <div class="seg" role="group" aria-label="Theme">${th.map(([k,l])=>`<button class="${S.theme===k?'on':''}" data-act="theme" data-arg="${k}" aria-pressed="${S.theme===k}">${l}</button>`).join('')}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:20px 0 10px"><b>Accent color</b>${isPro()?'':lockTag()}</div>
+    <div class="swatches" role="group" aria-label="Accent color">${acc.map(([k,c])=>`<button class="swatch ${S.accent===k?'on':''}" style="background:${c}" data-act="accent" data-arg="${k}" aria-label="${k} accent" aria-pressed="${S.accent===k}">${S.accent===k?`<span style="color:#16132E">${ic('check',3)}</span>`:''}</button>`).join('')}</div>
+  </div>
+  <div class="sec"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><h2 class="h2">Home screen widget</h2>${isPro()?'':lockTag()}</div>
+    <button class="widget" data-act="widgets" style="border:0;width:100%;text-align:left">${logo(byId('pk'),48)}<span style="flex:1"><b style="font:800 18px/1.1 var(--display)">Pocket Kingdoms</b><br><span class="small" style="font-weight:600">Out in 2 days</span></span><span style="font:800 40px/1 var(--display)">2</span></button>
+  </div>
+  <div class="sec"><h2 class="h2">Alerts and sharing</h2></div>
+  <div class="group">
+    <button class="row-li" data-act="notif-settings"><span class="ic" style="${S.notifOn?'background:var(--okc);color:var(--ok)':'background:var(--errc);color:var(--err)'}">${ic(S.notifOn?'bell':'belloff')}</span><span class="grow"><b>Notifications</b><span class="muted small">${S.notifOn?'Allowed for all four channels':'Blocked in Android settings'}</span></span>${ic('chev')}</button>
+    <button class="row-li" data-act="battery"><span class="ic">${ic('battery')}</span><span class="grow"><b>Background work</b><span class="muted small">Keep the daily check running</span></span>${ic('chev')}</button>
+    <button class="row-li" data-act="share-list"><span class="ic">${ic('share')}</span><span class="grow"><b>Share your wishlist</b><span class="muted small">A read-only link. Nobody can change your list.</span></span>${ic('chev')}</button>
+  </div>
+  <div class="sec"><h2 class="h2">Account</h2></div>
+  <div class="group">
+    ${guest?`<div class="row-li"><span class="ic">${ic('phone')}</span><span class="grow"><b>This phone only</b><span class="muted small">Your list is not backed up and is lost if you uninstall</span></span></div>`:`<div class="row-li"><span class="ic">${ic('sync')}</span><span class="grow"><b>Synced</b><span class="muted small">Your list is backed up to your Google account</span></span></div>`}
+    ${isPro()?`<button class="row-li" data-act="restore"><span class="ic">${ic('sync')}</span><span class="grow"><b>Restore purchase</b><span class="muted small">Pull Pro back after a reinstall</span></span>${ic('chev')}</button>`:`<button class="row-li" data-act="redeem"><span class="ic">${ic('gift')}</span><span class="grow"><b>Redeem a code</b><span class="muted small">Giveaway or discount codes</span></span>${ic('chev')}</button>`}
+    ${S.role==='admin'?`<button class="row-li" data-act="admin"><span class="ic" style="background:var(--pc);color:var(--onpc)">${ic('shield')}</span><span class="grow"><b>Admin panel</b><span class="muted small">Codes and bKash payments</span></span>${ic('chev')}</button>`:''}
+    <button class="row-li" data-act="update"><span class="ic">${ic('download')}</span><span class="grow"><b>Check for updates</b><span class="muted small">Version 1.0.0</span></span>${ic('chev')}</button>
+    <button class="row-li" data-act="privacy"><span class="ic">${ic('shield')}</span><span class="grow"><b>Privacy policy</b><span class="muted small">What we store and what we never collect</span></span>${ic('chev')}</button>
+    <div class="row-li"><span class="ic">${ic('info')}</span><span class="grow"><b>About</b><span class="muted small">WishPlay is made by Nuvetrix</span></span></div>
+    ${guest?'':`<button class="row-li" data-act="signout"><span class="ic">${ic('logout')}</span><span class="grow"><b>Sign out</b></span></button>`}
+  </div>
+  ${guest?'':`<div class="sec"><h2 class="h2">Danger zone</h2>
+    <button class="row-li" data-act="delete-account" style="width:100%;border:1.5px solid var(--outv);background:transparent;border-radius:24px"><span class="ic" style="background:var(--errc);color:var(--err)">${ic('trash')}</span><span class="grow"><b style="color:var(--err)">Delete your account</b><span class="muted small">Removes your list and your Pro record from our servers. Cannot be undone.</span></span></button></div>`}`;
+}
+
+function tabs(){
+  const T={wishlist:wishlistTab,search:searchTab,alerts:alertsTab,profile:profileTab}[S.tab]();
+  const items=[['wishlist','list','Wishlist'],['search','search','Search'],['alerts','bell','Alerts'],['profile','user','Profile']];
+  return `<div class="screen"><div class="scroll" id="scroll">${T}</div>
+  ${S.tab==='wishlist'?`${S.fab?`<button class="scrim" data-act="fab" aria-label="Close menu"></button><div class="fab-menu"><button data-act="fab-search">${ic('search')}Search games</button><button data-act="fab-custom">${ic('edit')}Add a custom game</button></div>`:''}<button class="fab ${S.fab?'open':''}" data-act="fab" aria-expanded="${S.fab}" aria-label="${S.fab?'Close':'Add a game'}">${ic('plus',2.5)}${S.fab?'':'<span>Add game</span>'}</button>`:''}
+  <nav class="nav" aria-label="Main">${items.map(([k,i,l])=>`<button data-act="tab" data-arg="${k}" ${S.tab===k?'aria-current="page"':''}><span class="ind">${ic(i)}</span>${l}</button>`).join('')}</nav></div>`;
+}
+
+function details(id){
+  const g=byId(id);const plats=Object.keys(g.platforms);const sp=S.selPlat[id]||plats[0];const d=g.platforms[sp];
+  let rel;
+  if(!d)rel=`<div class="card" style="border:2px dashed var(--outv);background:transparent;display:flex;flex-direction:column;gap:6px"><span class="muted small" style="font-weight:700">Release date</span><b class="h1">To be announced</b><span class="muted">${g.tba?'Expected in '+g.tba+'. ':''}We'll alert you the moment a date is set.</span></div>`;
+  else{const n=days(d);
+    if(n<=0)rel=`<div class="card" style="background:var(--okc);color:var(--ok);display:flex;flex-direction:column;gap:4px"><span class="small" style="font-weight:700">Out now on ${PSHORT[sp]}</span><b class="h1">Released ${fmtY(d)}</b></div>`;
+    else rel=`<div class="hero" style="margin:0;width:100%;border-radius:32px 32px 32px 12px"><span class="hero-top"><span><span class="small" style="font-weight:700">${g.custom?'Your date':'Releases'} ${fmtY(d)}</span><br><span class="hero-num" style="font-size:72px">${n}</span><span class="hero-unit">${n===1?'day to go':'days to go'}</span></span></span>${wave(g.progress,290)}${g.moved?`<span class="small" style="font-weight:700;display:flex;gap:6px;align-items:center">${ic('moved')} Delayed from ${fmt(g.moved)}</span>`:''}</div>`;}
+  let reqs='';
+  if(!g.custom){
+    if(sp==='PC'){
+      const r=g.reqs&&g.reqs[S.reqMode];const keys=['OS','CPU','GPU','RAM'];
+      reqs=`<div class="sec"><h2 class="h2">System requirements</h2><div class="seg" role="group" aria-label="Requirement level" style="margin-bottom:6px"><button class="${S.reqMode==='min'?'on':''}" data-act="req" data-arg="min" aria-pressed="${S.reqMode==='min'}">Minimum</button><button class="${S.reqMode==='rec'?'on':''}" data-act="req" data-arg="rec" aria-pressed="${S.reqMode==='rec'}">Recommended</button></div>
+      <div>${keys.map(k=>`<div class="kv"><span>${k}</span><span class="${r?'':'tba-text'}">${r?esc(r[k]):'Will be shared later'}</span></div>`).join('')}</div></div>`;
+    }else if(sp==='Android'||sp==='iOS'){
+      reqs=`<div class="sec"><h2 class="h2">Requirements</h2><div class="kv"><span>${sp}</span><span>${MOBREQ[sp]}</span></div></div>`;
+    }else reqs=`<div class="sec"><h2 class="h2">Requirements</h2><p class="muted" style="margin:0">Runs on any ${PSHORT[sp]}. No extra hardware needed.</p></div>`;
+  }
+  const size=g.size&&g.size[sp];
+  const priceSec=(sp==='PC'&&g.price)?`<div class="sec"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 class="h2">Price on ${g.price.store}</h2>${isPro()?'':lockTag()}</div>
+    <div class="card" style="display:flex;flex-direction:column;gap:14px"><div style="display:flex;align-items:baseline;gap:10px"><b style="font:800 32px/1 var(--display)">${g.price.now}</b>${g.price.was?`<s class="muted">${g.price.was}</s><span class="tag" style="background:var(--okc);color:var(--ok)">20% off</span>`:''}</div>
+    <div style="display:flex;align-items:center;gap:12px"><span class="grow" style="flex:1"><b>Alert me when the price drops</b></span>${isPro()?sw(!!g.priceAlert,'pricealert','','Price drop alert'):`<button class="btn gold" style="height:40px;padding:0 16px" data-act="pro">Get Pro</button>`}</div></div></div>`:'';
+  return `<div class="screen"><div class="scroll nonav">
+  <div class="cover">${cover(g)}<div class="cover-top"><button class="ib onimg" data-act="back" aria-label="Back">${ic('back')}</button></div></div>
+  <div style="padding:0 20px;margin-top:-34px;position:relative;display:flex;align-items:flex-end;gap:14px"><span style="padding:5px;background:var(--surface);border-radius:28px">${logo(g,76)}</span></div>
+  <div style="padding:12px 20px 0"><h1 class="h1">${esc(g.title)}</h1><p class="muted" style="margin:4px 0 0">${g.custom?`<span class="tag">${ic('edit',2.5)}Custom game</span> You added this yourself`:esc(g.dev)}</p></div>
+  <div class="quick">
+    ${g.inList
+      ? `<button class="btn tonal" data-act="remove" data-arg="${g.id}">${ic('check',2.5)}On your list</button>`
+      : `<button class="btn gold" data-act="add" data-arg="${g.id}">${ic('plus',2.5)}Add to wishlist</button>`}
+    ${g.inList?`<button class="ib ${g.alert?'on':''}" data-act="bell" aria-label="${g.alert?'Turn off alerts for this game':'Turn on alerts for this game'}" aria-pressed="${g.alert}">${ic(g.alert?'bell':'belloff')}</button>`:''}
+    <button class="ib" data-act="share-game" data-arg="${g.id}" aria-label="Share ${esc(g.title)}">${ic('share')}</button>
+  </div>
+  <div class="chips" style="margin-top:16px" role="group" aria-label="Platform">${plats.map(p=>`<button class="chip ${sp===p?'on':''}" data-act="dplat" data-arg="${p}" aria-pressed="${sp===p}">${sp===p?ic('check',2.5):''}${PSHORT[p]}</button>`).join('')}</div>
+  <div class="sec" style="padding-top:14px">${rel}</div>
+  ${g.custom?`<div class="sec"><h2 class="h2">Your notes</h2><p style="margin:0">${esc(g.note||'No notes.')}</p><p class="muted small" style="margin:10px 0 0">WishPlay can't fetch covers, trailers or requirements for custom games. Your alerts still work.</p></div>`:`
+  <div class="sec"><h2 class="h2">Trailer</h2>${g.trailer?`<button class="trailer" data-act="trailer" aria-label="Watch the ${esc(g.title)} trailer on YouTube">${cover(g)}<span class="play">${shape('c9','#FFB938')}<svg viewBox="0 0 24 24" style="position:absolute;inset:0;margin:auto;width:30px;height:30px" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#16132E"/></svg></span><span class="cap">Watch on YouTube</span></button>`:`<div class="card" style="border:2px dashed var(--outv);background:transparent"><b>Trailer will be shared later</b><p class="muted small" style="margin:4px 0 0">We'll add it here as soon as the developer posts one.</p></div>`}</div>
+  <div class="sec"><h2 class="h2">About</h2><p style="margin:0">${esc(g.about)}</p></div>
+  ${reqs}
+  <div class="sec"><h2 class="h2">Space needed</h2><div class="row-li"><span class="ic">${ic('drive')}</span><span class="grow"><b class="${size?'':'tba-text'}" style="${size?'font:800 22px/1.1 var(--display)':''}">${size||'Will be shared closer to launch'}</b><span class="muted small">On ${PSHORT[sp]}</span></span></div></div>
+  ${priceSec}`}
+  <div class="sec">${g.inList?`<button class="btn danger block" data-act="remove" data-arg="${g.id}">${ic('trash')}Remove from wishlist</button>`:`<button class="btn lg gold block" data-act="add" data-arg="${g.id}">${ic('plus')}Add to wishlist</button>`}</div>
+  </div></div>`;
+}
+
+function customForm(){
+  return `<div class="screen"><div class="appbar"><button class="ib" data-act="back" aria-label="Back">${ic('back')}</button><h1 class="h2">Add a custom game</h1></div>
+  <div class="scroll nonav" style="padding:4px 20px 40px;display:flex;flex-direction:column;gap:22px">
+    <p class="muted" style="margin:0">For games WishPlay can't find. You set the release date, and alerts work the same way.</p>
+    <div class="field"><label for="cname">Game name</label><input class="input" id="cname" placeholder="e.g. Mango Rush" autocomplete="off"><span class="err" id="cname-err" hidden>Add a name to save this game.</span></div>
+    <div class="field"><label id="cplat-l">Platforms</label><div style="display:flex;flex-wrap:wrap;gap:8px" role="group" aria-labelledby="cplat-l">${ALLPLATS.map(p=>`<button class="chip cchip" data-act="cchip" data-arg="${p}" aria-pressed="false">${PSHORT[p]}</button>`).join('')}</div></div>
+    <div class="field"><label for="cdate">Release date</label><input class="input" id="cdate" type="date" min="2026-09-30">
+      <div class="row" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
+        <button class="chip" data-act="cquick" data-arg="30">In a month</button>
+        <button class="chip" data-act="cquick" data-arg="90">In 3 months</button>
+        <button class="chip" data-act="cquick" data-arg="365">Next year</button>
+      </div>
+      <label class="check" style="margin-top:6px"><input type="checkbox" id="ctba" data-act="ctba">The date isn't announced yet</label></div>
+    <div class="field"><label for="cnote">Notes <span class="muted" style="font-weight:500">(optional)</span></label><textarea class="input" id="cnote" placeholder="Where you heard about it, links, anything"></textarea></div>
+    <div class="notifmock"><span class="nm-ic">${ic('bell',2.5)}</span><span><b id="cpreview-t">Your game releases today</b><p id="cpreview-s">This is the alert you'll get. We'll also remind you ${S.alerts.lead} before.</p></span></div>
+    <button class="btn lg gold block" data-act="save-custom">Save to wishlist</button>
+    <p class="muted small" style="margin:0">Covers, trailers and system requirements can't be fetched for a custom game. You can edit the date any time and the alerts follow it.</p>
+  </div></div>`;
+}
+
+function proScreen(){
+  const owned=isPro();
+  const yes=`<span class="cv yes">${ic('check',3)}</span>`, no=`<span class="cv no">&ndash;</span>`;
+  /* free-vs-Pro is the question people actually have; a bare feature list never answers it */
+  const rows=[
+    ['Games on your list',`<span class="cv">${CAP}</span>`,`<span class="cv">&infin;</span>`],
+    ['Release and countdown alerts',yes,yes],
+    ['Date-change alerts',yes,yes],
+    ['Custom games',yes,yes],
+    ['Cloud sync and backup',yes,yes],
+    ['Price-drop alerts (PC)',no,yes],
+    ['Accent colors',no,yes],
+    ['Home-screen widget',no,yes]
+  ];
+  return `<div class="screen"><div class="appbar"><button class="ib" data-act="back" aria-label="Back">${ic('back')}</button><span style="flex:1"></span>${owned?'':`<button class="btn textbtn" data-act="restore">Restore</button>`}</div>
+  <div class="scroll nonav" style="padding:0 20px 40px">
+    <div class="cookie-wrap" style="width:120px;height:120px;margin-bottom:22px">${shape('c9','var(--pc)')}<span style="color:var(--onpc)"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="${P.crown}"/></svg></span></div>
+    <h1 class="display">${owned?'You have Pro for life':'WishPlay Pro'}</h1>
+    <p class="muted" style="font-size:17px;margin:10px 0 18px">${owned?'Everything is unlocked on every phone you sign in to.':'One payment of $'+PRICE+'. No subscription, no renewal, no ads. Yours on every phone you sign in to.'}</p>
+    ${owned?'':`<div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:22px;background:var(--pc);color:var(--onpc)">
+      <span style="font:800 44px/1 var(--display);letter-spacing:-.03em">$${PRICE}</span>
+      <span style="flex:1"><b style="display:block">Pay once, keep it for life</b><span class="small" style="font-weight:600">No subscription. Nothing renews.</span></span></div>`}
+
+    <h2 class="h2" style="margin-bottom:6px">What you get</h2>
+    <div class="cmp" style="margin-bottom:22px">
+      <span class="ch" style="text-align:left">&nbsp;</span><span class="ch">Free</span><span class="ch">Pro</span>
+      ${rows.map(([l,f,p])=>`<span>${l}</span>${f}${p}`).join('')}
+    </div>
+
+    ${owned?`<div class="group" style="margin:0 0 20px"><div class="row-li"><span class="ic" style="background:var(--okc);color:var(--ok)">${ic('check')}</span><span class="grow"><b>Unlocked on this phone</b><span class="muted small">Pro follows your Google account, up to 5 installs</span></span></div>
+      <button class="row-li" data-act="restore"><span class="ic">${ic('sync')}</span><span class="grow"><b>Restore on another phone</b><span class="muted small">Sign in with the same account</span></span>${ic('chev')}</button></div>`
+    :`<div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn lg filled block" data-act="pay-card">${ic('card')}Pay with card</button>
+      <button class="btn lg tonal block" data-act="pay-bkash">${ic('phone')}Pay with bKash</button>
+      <button class="btn textbtn block" data-act="redeem">${ic('gift')}Redeem a code</button>
+      <button class="btn textbtn block" data-act="restore">${ic('sync')}Restore a purchase</button>
+    </div>
+
+    <h2 class="h2" style="margin:28px 0 6px">Good to know</h2>
+    <div class="kv"><span>If I reinstall?</span><span>Sign in and Pro comes back</span></div>
+    <div class="kv"><span>New phone?</span><span>Included, up to 5 installs</span></div>
+    <div class="kv"><span>Refunds</span><span>Handled by Paddle</span></div>
+    <p class="muted small" style="margin:16px 0 0;display:flex;gap:8px">${ic('shield')}<span>Card payments go through Paddle's secure checkout. WishPlay never sees your card details, and Pro is granted on our server, not in the app.</span></p>`}
+  </div></div>`;
+}
+
+function adminScreen(){
+  const active=S.codes.filter(c=>c.on&&c.uses<c.max).length;
+  const free=S.adminType==='free';
+  return `<div class="screen"><div class="appbar"><button class="ib" data-act="back" aria-label="Back">${ic('back')}</button><h1 class="h2">Admin panel</h1></div>
+  <div class="scroll nonav" style="padding-bottom:40px">
+    <div class="stats"><div class="stat"><b>${active}</b><span class="muted small">Active codes</span></div><div class="stat"><b>${S.redeemed}</b><span class="muted small">Redeemed</span></div><div class="stat" style="background:var(--pc);color:var(--onpc)"><b>${S.pending.length}</b><span class="small" style="font-weight:600">bKash to check</span></div></div>
+    <div class="sec"><h2 class="h2">bKash payments to check</h2>
+    ${S.pending.length?`<div class="group" style="margin:0">${S.pending.map((p,i)=>`<div class="row-li" style="flex-wrap:wrap"><span class="grow"><b class="codebox">${esc(p.trx)}</b><span class="muted small">From ${esc(p.from)}, ${esc(p.when)}</span></span><span style="display:flex;gap:6px;width:100%"><button class="btn filled" style="flex:1;height:44px" data-act="approve" data-arg="${i}">Approve</button><button class="btn outlined" style="flex:1;height:44px" data-act="reject" data-arg="${i}">Reject</button></span></div>`).join('')}</div>`:`<p class="muted" style="margin:0">All caught up. New bKash payments will show here.</p>`}</div>
+    <div class="sec"><h2 class="h2">Create a code</h2>
+      <div class="card" style="display:flex;flex-direction:column;gap:16px">
+        <div class="seg" role="group" aria-label="Code type"><button class="${free?'on':''}" data-act="atype" data-arg="free" aria-pressed="${free}">Free Pro</button><button class="${!free?'on':''}" data-act="atype" data-arg="pct" aria-pressed="${!free}">Discount</button></div>
+        ${free?'':`<div class="field"><label for="cpct">Discount (%)</label><input class="input" id="cpct" type="number" min="1" max="99" value="20"></div>`}
+        <div style="display:flex;gap:10px"><div class="field" style="flex:1"><label for="cmax">Max uses</label><input class="input" id="cmax" type="number" min="1" value="${free?10:100}"></div><div class="field" style="flex:1.3"><label for="cexp">Expires</label><input class="input" id="cexp" type="date" value="2026-12-31"></div></div>
+        <button class="btn lg gold block" data-act="create-code">${ic('plus')}Create code</button>
+      </div></div>
+    <div class="sec"><h2 class="h2">Your codes</h2>
+      <label class="searchbar" style="margin:0">${ic('search')}<input id="codeq" type="text" placeholder="Find a code" value="${esc(S.codeQ)}" aria-label="Find a code" autocomplete="off">${S.codeQ?`<button class="ib" data-act="clear-codeq" aria-label="Clear">${ic('x')}</button>`:''}</label></div>
+    <div class="group">${S.codes.map((c,i)=>({c,i})).filter(({c})=>!S.codeQ||c.code.toLowerCase().includes(S.codeQ.toLowerCase())).map(({c,i})=>{const used=c.uses>=c.max,live=c.on&&!used;return `<div class="row-li" style="flex-wrap:wrap;${live?'':'opacity:.62'}"><span class="ic" style="${c.type==='free'?'background:var(--pc);color:var(--onpc)':''}">${ic(c.type==='free'?'gift':'tag')}</span><span class="grow"><b class="codebox">${esc(c.code)}</b><span class="muted small">${c.type==='free'?'Free Pro':c.pct+'% off'}, ${c.uses} of ${c.max} used, ${used?'used up':'ends '+fmt(c.exp)}</span></span><button class="ib" data-act="copy" data-arg="${esc(c.code)}" aria-label="Copy ${esc(c.code)}">${ic('copy')}</button>${used?'':sw(c.on,'toggle-code',i,'Code '+c.code+' active')}</div>`}).join('')}</div>
+  </div></div>`;
+}
+
+/* sheets */
+function sheetHTML(){
+  const s=S.sheet;if(!s)return'';
+  let body='';
+  if(s==='cap')body=`<b class="h1">Your list is full</b><p class="muted" style="margin:0">Free lists hold up to ${CAP} games. Remove one to make space, or get Pro for an unlimited list.</p><button class="btn lg gold block" data-act="pro">Get Pro for $${PRICE}</button><button class="btn tonal block" data-act="manage-list">Manage my list</button><button class="btn textbtn block" data-act="sheet-close">Not now</button>`;
+
+  if(s==='sort')body=`<b class="h1">Sort your list</b>
+    <div role="radiogroup" aria-label="Sort your list">${SORTS.map(([k,l,d])=>`<button class="radio" role="radio" aria-checked="${S.sort===k}" data-act="sort" data-arg="${k}"><span class="dotbox"></span><span class="grow">${l}<span class="muted">${d}</span></span></button>`).join('')}</div>
+    <p class="muted small" style="margin:0">Sorting by release date also groups your list by month.</p>`;
+
+  /* asked only after the first game is added, never at launch (Android 13+ rule) */
+  if(s==='notif')body=`<b class="h1">Want a heads-up before it drops?</b>
+    <p class="muted" style="margin:0">Android has to ask before WishPlay can send anything. Without it, nothing on your list can reach you.</p>
+    <div class="notifmock"><span class="nm-ic">${ic('bell',2.5)}</span><span><b>Pocket Kingdoms is out today</b><p>Now on Android and iOS &middot; tap to open</p></span></div>
+    <button class="btn lg gold block" data-act="notif-allow">Turn on notifications</button>
+    <button class="btn textbtn block" data-act="notif-deny">Not now</button>
+    <p class="muted small" style="margin:0">You can change this any time in Profile. Each alert type is its own Android channel, so you can mute them one by one.</p>`;
+
+  if(s==='share')body=`<b class="h1">Share your wishlist</b>
+    <p class="muted" style="margin:0">Anyone with the link sees a read-only copy. They can't add, remove or see your account.</p>
+    <div class="row-li"><span class="ic">${ic('list')}</span><span class="grow"><b class="codebox">wishplay.app/l/nk4q2</b><span class="muted small">${listGames().length} games &middot; link stops working when you switch it off</span></span></div>
+    <button class="btn lg gold block" data-act="copy" data-arg="wishplay.app/l/nk4q2">${ic('copy')}Copy link</button>
+    <button class="btn tonal block" data-act="share-image">${ic('share')}Share as an image instead</button>
+    <button class="btn textbtn block" data-act="sheet-close">Close</button>`;
+
+  if(s==='battery')body=`<b class="h1">Keep the daily check alive</b>
+    <p class="muted" style="margin:0">Some Android skins stop background work to save battery. If that happens, WishPlay can miss a date change.</p>
+    <div class="group" style="margin:0">
+      <div class="row-li"><span class="timeline-date" style="width:40px;height:40px;border-radius:14px"><b style="font-size:18px">1</b></span><span class="grow"><b>Open Android Settings</b><span class="muted small">Apps, then WishPlay</span></span></div>
+      <div class="row-li"><span class="timeline-date" style="width:40px;height:40px;border-radius:14px"><b style="font-size:18px">2</b></span><span class="grow"><b>Battery, then Unrestricted</b><span class="muted small">Called "No restrictions" on some phones</span></span></div>
+    </div>
+    <button class="btn lg filled block" data-act="open-settings">Open Android settings</button>
+    <button class="btn textbtn block" data-act="sheet-close">I'll do it later</button>`;
+
+  if(s==='privacy')body=`<b class="h1">What WishPlay stores</b>
+    <div class="kv"><span>We keep</span><span>Your Google ID, email, name, your list</span></div>
+    <div class="kv"><span>We never collect</span><span>Ads, trackers, contacts, location</span></div>
+    <div class="kv"><span>Crash reports</span><span>Stripped of personal data</span></div>
+    <div class="kv"><span>On this phone</span><span>Encrypted database (SQLCipher)</span></div>
+    <button class="btn lg tonal block" data-act="sheet-close">Got it</button>`;
+
+  if(s==='delete')body=`<b class="h1" style="color:var(--err)">Delete your account?</b>
+    <p class="muted" style="margin:0">This removes your wishlist, your Pro record and your profile from our servers. It cannot be undone, and buying Pro again would be a new purchase.</p>
+    <div class="field"><label for="delc">Type DELETE to confirm</label><input class="input codebox" id="delc" placeholder="DELETE" autocomplete="off" style="text-transform:uppercase"></div>
+    <button class="btn lg block" data-act="delete-confirm" style="background:var(--err);color:#fff">${ic('trash')}Delete my account</button>
+    <button class="btn textbtn block" data-act="sheet-close">Keep my account</button>`;
+  if(s==='signin')body=`<b class="h1">Sign in to get Pro</b><p class="muted" style="margin:0">Pro is saved to your Google account, so it comes back on a new phone or after a reinstall.</p><button class="btn lg filled block" data-act="google-in">${G_LOGO}<span>Sign in with Google</span></button><button class="btn textbtn block" data-act="sheet-close">Not now</button>`;
+  if(s==='checkout')body=`<b class="h1">Pay with card</b><p class="muted" style="margin:0">Checkout opens in your browser. When the payment goes through, Pro unlocks here automatically.</p><div class="kv"><span>WishPlay Pro, lifetime</span><span>$${PRICE}</span></div><button class="btn lg filled block" data-act="checkout-done">Open secure checkout</button><button class="btn textbtn block" data-act="sheet-close">Cancel</button>`;
+  if(s==='bkash')body=`<b class="h1">Pay with bKash</b>
+    <div class="row-li"><span class="timeline-date" style="width:40px;height:40px;border-radius:14px"><b style="font-size:18px">1</b></span><span class="grow"><b>Send Money to <span class="codebox">${BKASH}</span></b><span class="muted small">${BDT} BDT. Use Send Money, not Payment.</span></span><button class="ib" data-act="copy" data-arg="${BKASH}" aria-label="Copy the bKash number">${ic('copy')}</button></div>
+    <div class="row-li"><span class="timeline-date" style="width:40px;height:40px;border-radius:14px"><b style="font-size:18px">2</b></span><span class="grow"><b>Enter the Transaction ID</b><span class="muted small">It's in the bKash confirmation SMS.</span></span></div>
+    <div class="field"><label for="trx">Transaction ID (TrxID)</label><input class="input codebox" id="trx" placeholder="e.g. BK7X4Q2M9A" autocomplete="off">${S.bkErr?'<span class="err">Enter the TrxID from your bKash SMS.</span>':''}</div>
+    <button class="btn lg gold block" data-act="bkash-submit">Submit for approval</button><p class="muted small" style="margin:0">Pro unlocks once the payment is checked, usually within 24 hours.</p>`;
+  if(s==='redeem'){const m=S.redeemMsg;body=`<b class="h1">Redeem a code</b><div class="field"><label for="code">Code</label><input class="input codebox" id="code" placeholder="WP-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase"></div>${m?`<p style="margin:0;font-weight:600;color:${m.ok?'var(--ok)':'var(--err)'}">${esc(m.text)}</p>`:''}${m&&m.ok&&m.pct?`<button class="btn lg filled block" data-act="pay-card">Pay $${m.price} with card</button>`:`<button class="btn lg gold block" data-act="redeem-apply">Redeem</button>`}<p class="muted small" style="margin:0">Try WP-GIFT-7K2Q or WP-EID20 in this prototype.</p>`;}
+  return `<button class="scrim" data-act="sheet-close" aria-label="Close"></button><div class="sheet" role="dialog" aria-modal="true"><span class="handle"></span>${body}</div>`;
+}
+
+/* ---------- render ---------- */
+function render(){
+  const t=top();
+  let html;
+  if(t.s==='onboard')html=onboard();
+  else if(t.s==='tabs')html=tabs();
+  else if(t.s==='details')html=details(t.id);
+  else if(t.s==='custom')html=customForm();
+  else if(t.s==='pro')html=proScreen();
+  else if(t.s==='admin')html=adminScreen();
+  else if(t.s==='calendar')html=calendarScreen();
+  const key=t.s+(t.id||'')+(t.s==='tabs'?S.tab:'')+(t.s==='onboard'?S.onbStep:'');
+  const keepScroll=key===lastKey&&document.getElementById('scroll-root');
+  const prevScroll=keepScroll?keepScroll.scrollTop:0;
+  const app=$('#app');
+  app.className=S.accent!=='gold'&&isPro()?'accent-'+S.accent:'';
+  app.innerHTML=html+sheetHTML()+(S.snack?`<div class="snack ${t.s==='tabs'?'':'nonav'}" role="status">${esc(S.snack)}</div>`:'');
+  const scr=app.querySelector('.screen');const sc=app.querySelector('.scroll');
+  if(sc){sc.id='scroll-root';if(keepScroll)sc.scrollTop=prevScroll}
+  if(key!==lastKey&&scr)scr.classList.add(dir==='fwd'?'in-fwd':dir==='back'?'in-back':'in-fade');
+  lastKey=key;dir='fade';
+  if(t.s==='tabs'&&S.tab==='search')renderResults();
+  $('#roleSeg').innerHTML=[['guest','Guest'],['free','Free'],['pro','Pro'],['admin','Admin']].map(([k,l])=>`<button class="${S.role===k?'on':''}" data-act="role" data-arg="${k}" aria-pressed="${S.role===k}">${l}</button>`).join('');
+  if(S.theme==='system')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',S.theme);
+}
+function renderResults(){const r=$('#results');if(r)r.innerHTML=resultsHTML()}
+function push(o){S.stack.push(o);S.fab=false;S.sheet=null;dir='fwd';render()}
+function back(){if(S.stack.length>1)S.stack.pop();S.sheet=null;dir='back';render()}
+function snack(m){S.snack=m;render();clearTimeout(snackTimer);snackTimer=setTimeout(()=>{S.snack='';const el=document.querySelector('.snack');if(el)el.remove()},3000)}
+/* one shared add path so the permission prompt fires on the first add, wherever it happens */
+function addGame(id,fromDetails){
+  const g=byId(id);
+  if(g.inList&&!fromDetails){push({s:'details',id});return}
+  if(!isPro()&&listGames().length>=CAP){S.sheet='cap';render();return}
+  g.inList=true;g.ord=ordSeq++;
+  if(!S.notifAsked){S.sheet='notif';render();return}
+  snack(g.title+' added to your wishlist');
+}
+function goTabs(tab){S.stack=[{s:'tabs'}];if(tab)S.tab=tab;dir='fade';render()}
+
+/* ---------- actions ---------- */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const a=el.dataset.act,arg=el.dataset.arg;
+  const t=top();
+  switch(a){
+  case'google':S.role='free';S.onbStep=1;dir='fwd';render();break;
+  case'guest':S.role='guest';S.onbStep=1;dir='fwd';render();break;
+  case'onb-back':if(S.onbStep>1){S.onbStep--;dir='back';render()}else{S.onbStep=0;dir='back';render()}break;
+  case'onb-skip':S.onbStep=0;goTabs('wishlist');snack('Skipped setup. You can change all of it in Profile.');break;
+  case'onb-plat':{const i=S.prefPlats.indexOf(arg);if(i<0)S.prefPlats.push(arg);else S.prefPlats.splice(i,1);render();break}
+  case'onb-next':S.onbStep=2;dir='fwd';render();break;
+  case'onb-lead':S.alerts.lead=arg;render();break;
+  case'onb-done':S.plat=S.prefPlats.length===1?S.prefPlats[0]:'All';S.onbStep=0;goTabs('wishlist');
+    snack(S.prefPlats.length?'Set up for '+S.prefPlats.map(p=>PSHORT[p]).join(', '):'All set. Add your first game.');break;
+  case'google-in':S.role='free';S.sheet=null;snack('Signed in. Your list is syncing now.');break;
+  case'tab':S.tab=arg;S.fab=false;dir='fade';render();break;
+  case'open':push({s:'details',id:arg});break;
+  case'back':back();break;
+  case'fab':S.fab=!S.fab;render();break;
+  case'fab-search':S.fab=false;S.tab='search';dir='fade';if(t.s!=='tabs')S.stack=[{s:'tabs'}];render();setTimeout(()=>{const q=$('#q');if(q)q.focus()},60);break;
+  case'fab-custom':push({s:'custom'});break;
+  case'filter':S.filter=arg;render();break;
+  case'plat':S.plat=arg;render();break;
+  case'clear-q':e.preventDefault();S.query='';const q=$('#q');if(q){q.value='';q.focus()}renderResults();break;
+  case'add':addGame(arg,t.s==='details');break;
+  case'remove':{const g=byId(arg);g.inList=false;if(t.s==='details')render();else back();snack(g.title+' removed from your wishlist');break}
+  case'sort-open':S.sheet='sort';render();break;
+  case'sort':S.sort=arg;S.sheet=null;render();break;
+  case'manage-list':S.sheet=null;S.stack=[{s:'tabs'}];S.tab='wishlist';S.filter='all';dir='back';render();break;
+  case'notif-allow':S.notifAsked=true;S.notifOn=true;S.sheet=null;snack('Notifications on. You\'ll hear about releases, delays and reminders.');break;
+  case'notif-deny':S.notifAsked=true;S.notifOn=false;S.sheet=null;snack('No notifications for now. Turn them on any time in Profile.');break;
+  case'notif-settings':if(!S.notifOn){S.notifAsked=false;S.sheet='notif';render()}else snack('Opens Android settings, where each alert channel can be muted.');break;
+  case'battery':S.sheet='battery';render();break;
+  case'open-settings':S.sheet=null;snack('Opens Android app settings for WishPlay.');break;
+  case'privacy':S.sheet='privacy';render();break;
+  case'share-list':S.sheet='share';render();break;
+  case'share-image':S.sheet=null;snack('Opens the Android share sheet with your list as an image.');break;
+  case'share-game':{const g=byId(arg);S.sheet=null;snack('Shared '+g.title+' with a link back to WishPlay.');break}
+  case'restore':S.sheet=null;if(S.role==='guest'){S.sheet='signin';render();break}snack(isPro()?'Pro is already active on this phone.':'No purchase found for this account.');break;
+  case'delete-account':S.delOk=false;S.sheet='delete';render();break;
+  case'delete-confirm':{const v=(($('#delc')||{}).value||'').trim().toUpperCase();
+    if(v!=='DELETE'){snack('Type DELETE to confirm.');break}
+    S.role='guest';S.accent='gold';S.sheet=null;S.stack=[{s:'onboard'}];S.onbStep=0;dir='fade';render();
+    snack('Account deleted. Everything on our servers is gone.');break}
+  case'calendar':push({s:'calendar'});break;
+  case'cal-month':S.calMonth=arg;S.calDay=null;render();break;
+  case'cal-day':S.calDay=+arg===S.calDay||+arg===0?null:+arg;render();break;
+  case'recent':{S.query=arg;S.recent=[arg,...S.recent.filter(r=>r!==arg)].slice(0,6);render();setTimeout(()=>{const q=$('#q');if(q)q.value=arg},0);break}
+  case'drop-recent':S.recent.splice(+arg,1);renderResults();break;
+  case'clear-recent':S.recent=[];renderResults();break;
+  case'clear-codeq':S.codeQ='';render();break;
+  case'cquick':{const d=new Date(TODAY.getTime()+ +arg*864e5);const v=d.toISOString().slice(0,10);const f=$('#cdate');const tb=$('#ctba');if(tb&&tb.checked){tb.checked=false;f.disabled=false}f.value=v;break}
+  case'dplat':S.selPlat[t.id]=arg;render();break;
+  case'req':S.reqMode=arg;render();break;
+  case'bell':{const g=byId(t.id);g.alert=!g.alert;snack(g.alert?'Alerts on for '+g.title:'Alerts off for '+g.title);break}
+  case'trailer':snack('Opens the trailer in the YouTube app');break;
+  case'pricealert':{const g=byId(t.id);g.priceAlert=!g.priceAlert;snack(g.priceAlert?'You\'ll hear about price drops for '+g.title:'Price alerts off for '+g.title);break}
+  case'pro':S.sheet=null;push({s:'pro'});break;
+  case'pay-card':S.sheet=S.role==='guest'?'signin':'checkout';render();break;
+  case'pay-bkash':S.bkErr=false;S.sheet=S.role==='guest'?'signin':'bkash';render();break;
+  case'redeem':S.redeemMsg=null;S.sheet=S.role==='guest'?'signin':'redeem';render();break;
+  case'checkout-done':S.role='pro';S.sheet=null;S.redeemMsg=null;snack('Payment confirmed. Pro is yours for life.');break;
+  case'bkash-submit':{const v=($('#trx').value||'').trim().toUpperCase();if(!v){S.bkErr=true;render();break}S.pending.unshift({trx:v,from:'You',when:'just now'});S.sheet=null;snack('Submitted. Pro unlocks once the payment is checked.');break}
+  case'redeem-apply':{const v=($('#code').value||'').trim().toUpperCase();const c=S.codes.find(x=>x.code===v);
+    if(!c||!c.on||c.uses>=c.max){S.redeemMsg={ok:false,text:'That code doesn\'t exist or has expired. Check it and try again.'};render();break}
+    c.uses++;S.redeemed++;if(c.type==='free'){S.role='pro';S.sheet=null;S.redeemMsg=null;snack('Code redeemed. Pro is yours for life.')}
+    else{const price=(PRICE*(100-c.pct)/100).toFixed(2);S.redeemMsg={ok:true,pct:true,price,text:c.pct+'% off applied. Lifetime Pro is now $'+price+'.'};render()}break}
+  case'sheet-close':S.sheet=null;render();break;
+  case'role':S.role=arg;if(t.s==='admin'&&arg!=='admin')S.stack.pop();if(t.s==='onboard')goTabs('wishlist');else render();break;
+  case'jump':S.sheet=null;S.fab=false;
+    if(arg==='onboard'){S.stack=[{s:'onboard'}];S.onbStep=0;dir='fade';render()}
+    else if(arg==='calendar'){S.stack=[{s:'tabs'},{s:'calendar'}];S.tab='alerts';S.calMonth='2026-11';S.calDay=null;dir='fwd';render()}
+    else if(arg==='cap'){if(isPro())S.role='free';S.stack=[{s:'tabs'}];S.tab='wishlist';S.sheet='cap';render()}
+    else if(arg==='pro'){if(isPro())S.role='free';S.stack=[{s:'tabs'},{s:'pro'}];dir='fwd';render()}
+    else if(arg==='admin'){S.role='admin';S.tab='profile';S.stack=[{s:'tabs'},{s:'admin'}];dir='fwd';render()}break;
+  case'theme':S.theme=arg;render();break;
+  case'accent':if(!isPro()){push({s:'pro'});break}S.accent=arg;render();break;
+  case'widgets':if(!isPro()){push({s:'pro'});break}snack('Long-press your home screen, tap Widgets, then pick WishPlay.');break;
+  case'admin':push({s:'admin'});break;
+  case'atype':S.adminType=arg;render();break;
+  case'create-code':{const pct=S.adminType==='pct'?Math.max(1,Math.min(99,parseInt(($('#cpct')||{}).value)||20)):0;const max=Math.max(1,parseInt($('#cmax').value)||1);const exp=$('#cexp').value||'2026-12-31';
+    const rnd=()=>Math.random().toString(36).slice(2,6).toUpperCase().replace(/[01OI]/g,'X');
+    const code=S.adminType==='free'?'WP-GIFT-'+rnd():'WP-'+pct+'OFF-'+rnd();
+    S.codes.unshift({code,type:S.adminType,pct,uses:0,max,exp,on:true});snack(code+' created');break}
+  case'copy':try{navigator.clipboard.writeText(arg)}catch(err){}snack(arg+' copied');break;
+  case'toggle-code':{const c=S.codes[+arg];c.on=!c.on;snack(c.on?c.code+' is active again':c.code+' turned off. It can\'t be redeemed now.');break}
+  case'approve':{const p=S.pending.splice(+arg,1)[0];S.redeemed++;snack('Approved '+p.trx+'. Pro unlocked for that account.');break}
+  case'reject':{const p=S.pending.splice(+arg,1)[0];snack('Rejected '+p.trx+'. The buyer will be asked to check the TrxID.');break}
+  case'alert':if(arg==='price'&&!isPro()){push({s:'pro'});break}S.alerts[arg]=!S.alerts[arg];render();break;
+  case'lead':S.alerts.lead=arg;render();break;
+  case'update':snack('You\'re on the latest version.');break;
+  case'signout':S.role='guest';S.accent='gold';S.stack=[{s:'onboard'}];S.onbStep=0;dir='fade';render();break;
+  case'cchip':{const on=el.classList.toggle('on');el.setAttribute('aria-pressed',on);break}
+  case'ctba':{const d=$('#cdate');d.disabled=el.checked;if(el.checked)d.value='';break}
+  case'save-custom':{const name=$('#cname').value.trim();if(!name){$('#cname-err').hidden=false;$('#cname').focus();break}
+    if(!isPro()&&listGames().length>=CAP){S.sheet='cap';render();break}
+    const plats=[...document.querySelectorAll('.cchip.on')].map(b=>b.dataset.arg);const date=$('#ctba').checked?null:($('#cdate').value||null);
+    const pl={};(plats.length?plats:['Android']).forEach(p=>pl[p]=date);
+    games.push({id:'c'+Date.now(),title:name,custom:true,hue:HUES[games.length%HUES.length],shape:'c9',platforms:pl,size:{},progress:.15,note:$('#cnote').value.trim(),inList:true,alert:true,ord:ordSeq++});
+    S.filter='all';S.stack=[{s:'tabs'}];S.tab='wishlist';dir='back';
+    if(!S.notifAsked){S.sheet='notif';render();break}
+    snack(name+' added to your wishlist');break}
+  }
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='q'){S.query=e.target.value;renderResults()}
+  if(e.target.id==='codeq'){S.codeQ=e.target.value;render();const f=$('#codeq');if(f){f.focus();f.setSelectionRange(f.value.length,f.value.length)}}
+  if(e.target.id==='cdate'||e.target.id==='cname'){
+    const d=$('#cdate'),t=$('#cpreview-t'),s=$('#cpreview-s'),n=($('#cname')||{}).value;
+    if(t)t.textContent=(n&&n.trim()?n.trim():'Your game')+(d&&d.value?' releases on '+fmtY(d.value):' releases today');
+    if(s)s.textContent='This is the alert you\'ll get. We\'ll also remind you '+S.alerts.lead+' before.';
+  }
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(S.sheet||S.fab)){S.sheet=null;S.fab=false;render()}});
+$('#demoLogo').innerHTML=brandIcon(44)+'<b>WishPlay</b>';
+render();
+})();
+</script>
+</body>
+</html>

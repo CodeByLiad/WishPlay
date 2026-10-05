@@ -1,0 +1,24 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/app/build/
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+.kotlin/
+.playwright-mcp/
+.spine/
+emulator_run.log
+/current_screen.png
+/search_tab.png
+/dump.xml
+/search_dump.xml
+
+# Exclude signing keystores from public git
+*.jks
+*.keystore
+secrets.properties

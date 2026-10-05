@@ -1,0 +1,7 @@
+project_id = "wishplay"
+
+[functions.search]
+verify_jwt = false
+
+[functions.game]
+verify_jwt = false
