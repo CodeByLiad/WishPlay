@@ -22,12 +22,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronRight
@@ -72,6 +74,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.nuvetrix.wishplay.R
+import com.nuvetrix.wishplay.domain.model.Game
 import com.nuvetrix.wishplay.domain.model.SyncState
 import com.nuvetrix.wishplay.ui.alerts.sheets.BackgroundWorkSheet
 import com.nuvetrix.wishplay.ui.alerts.sheets.NotificationPrimingSheet
@@ -79,6 +82,7 @@ import com.nuvetrix.wishplay.ui.components.ButtonStyle
 import com.nuvetrix.wishplay.ui.components.CookieShape
 import com.nuvetrix.wishplay.ui.components.CookieShapeType
 import com.nuvetrix.wishplay.ui.components.ExpressiveButton
+import com.nuvetrix.wishplay.ui.components.GameLogo
 import com.nuvetrix.wishplay.ui.theme.WishPlayThemeColors
 
 @Composable
@@ -123,6 +127,7 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -186,7 +191,10 @@ fun ProfileScreen(
             )
 
             // Home Screen Widget Section
-            WidgetPreviewSection(isPro = uiState.user.isPro)
+            WidgetPreviewSection(
+                nextDropGame = uiState.nextDropGame,
+                isPro = uiState.user.isPro
+            )
 
             // Alerts and Sharing Section
             AlertsAndSharingSection(
@@ -642,7 +650,10 @@ private fun LookAndFeelSection(
 }
 
 @Composable
-private fun WidgetPreviewSection(isPro: Boolean) {
+private fun WidgetPreviewSection(
+    nextDropGame: Game?,
+    isPro: Boolean
+) {
     val customColors = WishPlayThemeColors
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -665,7 +676,7 @@ private fun WidgetPreviewSection(isPro: Boolean) {
             }
         }
 
-        // Widget Preview Card matching prototype
+        // Widget Preview Card matching user's real next drop game
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -677,44 +688,92 @@ private fun WidgetPreviewSection(isPro: Boolean) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CookieShape(CookieShapeType.C9))
-                        .background(Color(0xFF1F7A6E)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "PK",
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
-                        fontSize = 16.sp
-                    )
-                }
+                if (nextDropGame != null) {
+                    val gameColor = try {
+                        Color(android.graphics.Color.parseColor(nextDropGame.hueHex))
+                    } catch (_: Exception) {
+                        Color(0xFF1F7A6E)
+                    }
+                    val days = nextDropGame.daysUntilRelease()
+                    val whenLabel = when {
+                        days == null -> "Date TBA"
+                        days == 0 -> "Out today"
+                        days == 1 -> "Out tomorrow"
+                        days > 1 -> "Out in $days days"
+                        else -> "Out now"
+                    }
 
-                Column(modifier = Modifier.weight(1f)) {
+                    GameLogo(
+                        title = nextDropGame.title,
+                        hue = gameColor,
+                        shapeType = CookieShapeType.fromKey(nextDropGame.shapeKey),
+                        size = 48.dp,
+                        imageUrl = nextDropGame.logoUrl ?: nextDropGame.coverUrl
+                    )
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = nextDropGame.title,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = whenLabel,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
                     Text(
-                        text = "Pocket Kingdoms",
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 17.sp,
+                        text = days?.toString() ?: "—",
+                        style = MaterialTheme.typography.displayMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 38.sp
+                        ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CookieShape(CookieShapeType.C9))
+                            .background(customColors.accent),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = customColors.onAccent
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Next drop preview",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Add games to track releases",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
                     Text(
-                        text = "Out in 2 days",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.sp,
+                        text = "—",
+                        style = MaterialTheme.typography.displayMedium.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 38.sp
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-
-                Text(
-                    text = "2",
-                    style = MaterialTheme.typography.displayMedium.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 38.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface
-                )
             }
         }
     }

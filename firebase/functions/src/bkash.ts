@@ -84,6 +84,6 @@ export const submitBkash = functions.https.onCall(
 // Public HTTP function to expose bKash recipient config (not callable — no auth required)
 export const bkashConfig = functions.https.onRequest(async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
-  const bkashNumber = process.env.BKASH_NUMBER ?? "";
+  const bkashNumber = process.env.BKASH_NUMBER ?? "01978900129";
   res.json({ recipient: bkashNumber, amount_bdt: BKASH_AMOUNT_BDT });
 });

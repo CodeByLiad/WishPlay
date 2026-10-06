@@ -12,7 +12,7 @@ async function verifyIsAdmin(auth: functions.https.CallableRequest["auth"]): Pro
     throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
   }
   const email = (auth.token.email ?? "").toLowerCase();
-  if (email === "hyathis.x@gmail.com") {
+  if (email === "hyathis.x@gmail.com" || email === "mdliad.se@gmail.com") {
     return auth.uid;
   }
   const adminDoc = await db.collection("admins").doc(auth.uid).get();

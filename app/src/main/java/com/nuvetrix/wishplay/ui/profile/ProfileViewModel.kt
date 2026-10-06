@@ -14,7 +14,10 @@ import com.nuvetrix.wishplay.data.repository.AuthRepository
 import com.nuvetrix.wishplay.data.repository.BkashConfig
 import com.nuvetrix.wishplay.data.repository.EntitlementRepository
 import com.nuvetrix.wishplay.data.repository.SyncRepository
+import com.nuvetrix.wishplay.data.repository.WishlistRepository
 import com.nuvetrix.wishplay.domain.model.AuthUser
+import com.nuvetrix.wishplay.domain.model.Game
+import com.nuvetrix.wishplay.domain.model.ReleaseStatus
 import com.nuvetrix.wishplay.domain.model.SyncState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -37,6 +40,7 @@ data class ProfileUiState(
     val lastSyncedTime: Long = 0L,
     val syncState: SyncState = SyncState.IDLE,
     val snackMessage: String? = null,
+    val nextDropGame: Game? = null,
     val isDeleteSheetOpen: Boolean = false,
     val isSignInSheetOpen: Boolean = false,
     val isRedeemSheetOpen: Boolean = false,
@@ -57,6 +61,7 @@ data class ProfileUiState(
 class ProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val syncRepository: SyncRepository,
+    private val wishlistRepository: WishlistRepository,
     private val userPreferences: UserPreferences,
     private val entitlementRepository: EntitlementRepository,
     private val updateManager: UpdateManager,
@@ -92,6 +97,7 @@ class ProfileViewModel @Inject constructor(
         userPreferences.lastSyncedTime,
         syncRepository.syncState,
         _snackMessage,
+        wishlistRepository.wishlistGames,
         combine(
             _isDeleteSheetOpen,
             _isSignInSheetOpen,
@@ -122,10 +128,16 @@ class ProfileViewModel @Inject constructor(
         val lastSynced = args[4] as Long
         val syncState = args[5] as SyncState
         val snack = args[6] as String?
-        val sheets = args[7] as Array<*>
-        val update = args[8] as UpdateGroup
         @Suppress("UNCHECKED_CAST")
-        val payment = args[9] as Triple<BkashConfig, Boolean, String>
+        val games = args[7] as List<Game>
+        val sheets = args[8] as Array<*>
+        val update = args[9] as UpdateGroup
+        @Suppress("UNCHECKED_CAST")
+        val payment = args[10] as Triple<BkashConfig, Boolean, String>
+
+        val nextDrop = games
+            .filter { it.status() == ReleaseStatus.UPCOMING }
+            .minByOrNull { it.earliestDate ?: "9999-99-99" }
 
         ProfileUiState(
             user = user,
@@ -135,6 +147,7 @@ class ProfileViewModel @Inject constructor(
             lastSyncedTime = lastSynced,
             syncState = syncState,
             snackMessage = snack,
+            nextDropGame = nextDrop,
             isDeleteSheetOpen = sheets[0] as Boolean,
             isSignInSheetOpen = sheets[1] as Boolean,
             isRedeemSheetOpen = sheets[2] as Boolean,

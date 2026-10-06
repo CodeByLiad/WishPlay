@@ -19,10 +19,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -93,14 +96,14 @@ fun GameDetailsScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.surface
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(bottom = paddingValues.calculateBottomPadding() + 40.dp)
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 40.dp)
         ) {
             val gameColor = try {
                 Color(android.graphics.Color.parseColor(game.hueHex))
@@ -108,11 +111,11 @@ fun GameDetailsScreen(
                 customColors.accent
             }
 
-            // 1. Cover Image Banner with Back Button
+            // 1. Cover Image Banner with Back Button (extends behind status bar)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(236.dp)
+                    .height(280.dp)
                     .background(gameColor)
             ) {
                 if (!game.coverUrl.isNullOrBlank()) {
@@ -124,11 +127,24 @@ fun GameDetailsScreen(
                     )
                 }
 
-                // Scrimmed Back Button
+                // Top gradient scrim for high-contrast status bar icon visibility
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color(0x99000000), Color.Transparent)
+                            )
+                        )
+                )
+
+                // Scrimmed Back Button with statusBarsPadding so it never clashes with status bar icons
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .padding(16.dp)
+                        .statusBarsPadding()
+                        .padding(start = 16.dp, top = 8.dp)
                         .size(44.dp)
                         .clip(CircleShape)
                         .background(Color(0x8C16132E))
@@ -157,7 +173,8 @@ fun GameDetailsScreen(
                         title = game.title,
                         hue = gameColor,
                         shapeType = CookieShapeType.fromKey(game.shapeKey),
-                        size = 76.dp
+                        size = 76.dp,
+                        imageUrl = game.logoUrl ?: game.coverUrl
                     )
                 }
             }

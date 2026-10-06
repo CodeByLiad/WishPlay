@@ -85,7 +85,7 @@ fun ProPaymentSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val customColors = WishPlayThemeColors
     val context = LocalContext.current
-    var selectedTab by remember { mutableIntStateOf(0) } // 0 = Card/Paddle, 1 = bKash
+    var selectedTab by remember { mutableIntStateOf(1) } // 0 = Card/Paddle, 1 = bKash
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -257,8 +257,18 @@ fun ProPaymentSheet(
                     0 -> PaddlePaymentTab(
                         checkoutUrl = paddleCheckoutUrl,
                         onOpenCheckout = { url ->
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                            context.startActivity(intent)
+                            if (url.isNotBlank()) {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                    context.startActivity(intent)
+                                } catch (_: Exception) {}
+                            } else {
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Card checkout is coming soon. Please pay via bKash or redeem a code!",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            }
                         }
                     )
                     1 -> BkashPaymentTab(

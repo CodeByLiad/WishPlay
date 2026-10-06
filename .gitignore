@@ -18,7 +18,10 @@ emulator_run.log
 /dump.xml
 /search_dump.xml
 
-# Exclude signing keystores from public git
+# Exclude signing keystores and service accounts from public git
 *.jks
 *.keystore
 secrets.properties
+*serviceAccount*.json
+.env
+

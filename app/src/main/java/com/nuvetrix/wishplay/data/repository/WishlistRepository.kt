@@ -227,134 +227,15 @@ class WishlistRepository(
     }
 
     suspend fun seedInitialDataIfEmpty() {
-        val count = wishlistDao.getWishlistCount()
-        if (count > 0) return
+        // Disabled per user request: Provides a clean experience for real users.
+        // New installs start with an empty wishlist and show the "Find games to track" empty state.
+        return
+    }
 
-        // Seed sample games from prototype
-        val seedGames = listOf(
-            GameEntity(
-                id = "pk",
-                title = "Pocket Kingdoms",
-                developer = "Lanternfish Studio",
-                hueHex = "#1F7A6E",
-                shapeKey = "c9",
-                platformsJson = JSONObject().apply {
-                    put("Android", "2026-10-02")
-                    put("iOS", "2026-10-02")
-                }.toString(),
-                about = "Build a tiny kingdom and defend it from pocket-sized dragons. Short sessions, deep strategy.",
-                isCustom = false,
-                hasTrailer = true,
-                storageSizesJson = JSONObject().apply {
-                    put("Android", "1.8 GB")
-                    put("iOS", "2.1 GB")
-                }.toString(),
-                progress = 0.94f
-            ),
-            GameEntity(
-                id = "nd",
-                title = "Neon Drift 2",
-                developer = "Velocity Forge",
-                hueHex = "#B8325F",
-                shapeKey = "c4",
-                platformsJson = JSONObject().apply {
-                    put("PC", "2026-10-09")
-                    put("Android", "2026-10-09")
-                    put("iOS", "2026-10-23")
-                }.toString(),
-                about = "Arcade street racing across a city that rebuilds itself every night.",
-                isCustom = false,
-                hasTrailer = true,
-                storageSizesJson = JSONObject().apply {
-                    put("PC", "38 GB")
-                    put("Android", "3.4 GB")
-                }.toString(),
-                progress = 0.82f
-            ),
-            GameEntity(
-                id = "sf",
-                title = "Starfall Odyssey",
-                developer = "Northlight Interactive",
-                hueHex = "#3A48B8",
-                shapeKey = "c12",
-                platformsJson = JSONObject().apply {
-                    put("PC", "2026-11-13")
-                    put("PS5", "2026-11-13")
-                    put("Xbox Series", "2026-11-13")
-                }.toString(),
-                about = "A space opera RPG where every star on the map is a place you can land.",
-                isCustom = false,
-                hasTrailer = true,
-                storageSizesJson = JSONObject().apply {
-                    put("PC", "120 GB")
-                    put("PS5", "98 GB")
-                }.toString(),
-                progress = 0.61f
-            ),
-            GameEntity(
-                id = "ic",
-                title = "Iron Circuit: Rebellion",
-                developer = "Brassworks",
-                hueHex = "#A3441F",
-                shapeKey = "sq",
-                platformsJson = JSONObject().apply {
-                    put("PS5", "2026-12-03")
-                    put("Xbox Series", "2026-12-03")
-                    put("PC", "2026-12-03")
-                }.toString(),
-                about = "Squad-based mech tactics. Rebuild your machines between missions from what you salvage.",
-                isCustom = false,
-                hasTrailer = true,
-                movedFromDate = "2026-10-22",
-                progress = 0.45f
-            ),
-            GameEntity(
-                id = "hk",
-                title = "Hollow Keep",
-                developer = "Mossgate Games",
-                hueHex = "#4A6630",
-                shapeKey = "c6",
-                platformsJson = JSONObject().apply {
-                    put("Switch 2", JSONObject.NULL)
-                    put("PC", JSONObject.NULL)
-                }.toString(),
-                expectedYear = "2027",
-                about = "A hand-drawn castle crawler. The developer has shown one short teaser so far.",
-                isCustom = false,
-                hasTrailer = false,
-                progress = 0.20f
-            ),
-            GameEntity(
-                id = "tb",
-                title = "Tidebound",
-                developer = "Saltwater Collective",
-                hueHex = "#17618F",
-                shapeKey = "circle",
-                platformsJson = JSONObject().apply {
-                    put("Android", "2026-09-18")
-                }.toString(),
-                about = "Sail between drowned islands and trade stories for supplies.",
-                isCustom = false,
-                hasTrailer = true,
-                storageSizesJson = JSONObject().apply {
-                    put("Android", "900 MB")
-                }.toString(),
-                progress = 1.0f
-            )
-        )
-
-        wishlistDao.insertGames(seedGames)
-
-        // Add them to wishlist by default to match prototype state
-        seedGames.forEachIndexed { index, gameEntity ->
-            wishlistDao.insertWishlistItem(
-                WishlistItemEntity(
-                    gameId = gameEntity.id,
-                    alertEnabled = gameEntity.id != "tb",
-                    orderIndex = index,
-                    addedAt = System.currentTimeMillis() - (seedGames.size - index) * 60000L
-                )
-            )
+    suspend fun clearSampleGames() {
+        val sampleIds = listOf("pk", "nd", "sf", "ic", "hk", "tb")
+        sampleIds.forEach { id ->
+            wishlistDao.removeWishlistItem(id)
         }
     }
 }

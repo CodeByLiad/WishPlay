@@ -17,6 +17,7 @@ data class GameDto(
     @SerialName("hueHex") val hueHex: String = "#1F7A6E",
     @SerialName("shapeKey") val shapeKey: String = "c9",
     @SerialName("coverUrl") val coverUrl: String? = null,
+    @SerialName("logoUrl") val logoUrl: String? = null,
     @SerialName("platforms") val platforms: Map<String, String?> = emptyMap(),
     @SerialName("storageSizes") val storageSizes: Map<String, String?> = emptyMap(),
     @SerialName("about") val about: String? = null,

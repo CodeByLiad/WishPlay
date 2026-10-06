@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/checkout", "destination": "/api/checkout" },
+    { "source": "/paddleCheckout", "destination": "/api/checkout-page" },
+    { "source": "/webhook", "destination": "/api/webhook" }
+  ]
+}

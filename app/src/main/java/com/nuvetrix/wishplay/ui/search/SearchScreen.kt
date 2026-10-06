@@ -501,7 +501,8 @@ fun SearchResultRow(
                 title = game.title,
                 hue = gameColor,
                 shapeType = CookieShapeType.fromKey(game.shapeKey),
-                size = 48.dp
+                size = 48.dp,
+                imageUrl = game.logoUrl ?: game.coverUrl
             )
 
             Spacer(modifier = Modifier.width(14.dp))

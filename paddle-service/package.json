@@ -1,0 +1,12 @@
+{
+  "name": "wishplay-paddle-service",
+  "version": "1.0.0",
+  "description": "WishPlay Paddle Webhook and Checkout handler",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node api/index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

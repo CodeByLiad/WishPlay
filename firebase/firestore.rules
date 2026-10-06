@@ -3,6 +3,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isAdmin() {
+      return request.auth != null && (
+        (request.auth.token.email != null && request.auth.token.email.lower() == 'mdliad.se@gmail.com') ||
+        (request.auth.token.email != null && request.auth.token.email.lower() == 'hyathis.x@gmail.com') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
     // ─── Users ────────────────────────────────────────────────────────────────
     // Profile document: /users/{uid}
     match /users/{uid} {
@@ -14,47 +22,53 @@ service cloud.firestore {
       }
 
       // Entitlements: /users/{uid}/entitlements/{entitlementId}
-      // Read-only for the user; all writes come from Cloud Functions (admin SDK).
       match /entitlements/{entitlementId} {
-        allow read: if request.auth != null && request.auth.uid == uid;
-        allow write: if false; // Server-only via Admin SDK
+        allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+        allow write: if isAdmin();
       }
     }
 
+    // ─── Admins ────────────────────────────────────────────────────────────────
+    match /admins/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
     // ─── Promo codes ──────────────────────────────────────────────────────────
-    // No direct client access — validated entirely in Cloud Functions.
     match /promoCodes/{code} {
-      allow read, write: if false;
+      allow read, write: if isAdmin();
+      allow read: if request.auth != null;
+      allow update: if request.auth != null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['uses']);
     }
 
     // ─── Code redemptions ─────────────────────────────────────────────────────
     match /codeRedemptions/{redemptionId} {
-      allow read: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-      allow write: if false; // Cloud Functions only
+      allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow write: if isAdmin();
     }
 
     // ─── bKash submissions ────────────────────────────────────────────────────
-    // Users can create their own submissions; read their own; no updates from client.
     match /bkashSubmissions/{submissionId} {
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.status == 'pending';
       allow read: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-      allow update, delete: if false; // Admin SDK only
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
     }
 
     // ─── Payments ─────────────────────────────────────────────────────────────
     match /payments/{paymentId} {
       allow read: if request.auth != null
-        && resource.data.userId == request.auth.uid;
-      allow write: if false; // Paddle webhook via Admin SDK
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
     }
 
     // ─── Audit log ────────────────────────────────────────────────────────────
     match /auditLog/{logId} {
-      allow read, write: if false; // Admin SDK only
+      allow read: if isAdmin();
+      allow create: if request.auth != null;
     }
 
     // Deny everything else by default

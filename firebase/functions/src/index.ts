@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import { redeemCode } from "./redeemCode";
 import { submitBkash, bkashConfig } from "./bkash";
-import { paddleWebhook, getPaddleCheckoutUrl } from "./paddle";
+import { paddleWebhook, getPaddleCheckoutUrl, paddleCheckout } from "./paddle";
 
 import { adminGetDashboard, adminReviewBkash, adminCreateCode, adminToggleCode } from "./admin";
 
@@ -14,6 +14,7 @@ export {
   bkashConfig,
   paddleWebhook,
   getPaddleCheckoutUrl,
+  paddleCheckout,
   adminGetDashboard,
   adminReviewBkash,
   adminCreateCode,

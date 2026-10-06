@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -27,13 +30,28 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystorePath = project.findProperty("WISHPLAY_KEYSTORE_FILE")?.toString()
-            val keystoreFile = if (keystorePath != null) file(keystorePath) else null
+            val localProperties = Properties().apply {
+                val localPropsFile = rootProject.file("local.properties")
+                if (localPropsFile.exists()) {
+                    FileInputStream(localPropsFile).use { load(it) }
+                }
+            }
+            val projectKeystore = rootProject.file("keystore/wishplay-release.jks")
+            val keystorePath = localProperties.getProperty("WISHPLAY_KEYSTORE_FILE")
+                ?: project.findProperty("WISHPLAY_KEYSTORE_FILE")?.toString()
+            val keystoreFile = if (keystorePath != null) rootProject.file(keystorePath) else if (projectKeystore.exists()) projectKeystore else null
+
             if (keystoreFile != null && keystoreFile.exists()) {
                 storeFile = keystoreFile
-                storePassword = project.findProperty("WISHPLAY_KEYSTORE_PASSWORD")?.toString() ?: ""
-                keyAlias = project.findProperty("WISHPLAY_KEY_ALIAS")?.toString() ?: ""
-                keyPassword = project.findProperty("WISHPLAY_KEY_PASSWORD")?.toString() ?: ""
+                storePassword = localProperties.getProperty("WISHPLAY_KEYSTORE_PASSWORD")
+                    ?: project.findProperty("WISHPLAY_KEYSTORE_PASSWORD")?.toString()
+                    ?: "WishPlayRelease2026!"
+                keyAlias = localProperties.getProperty("WISHPLAY_KEY_ALIAS")
+                    ?: project.findProperty("WISHPLAY_KEY_ALIAS")?.toString()
+                    ?: "wishplay"
+                keyPassword = localProperties.getProperty("WISHPLAY_KEY_PASSWORD")
+                    ?: project.findProperty("WISHPLAY_KEY_PASSWORD")?.toString()
+                    ?: "WishPlayRelease2026!"
             } else {
                 // Fallback to local debug keystore for automated release compilation verification
                 val debugKeystore = file(System.getProperty("user.home") + "/.android/debug.keystore")
@@ -61,7 +79,6 @@ android {
             )
         }
         debug {
-            applicationIdSuffix = ".debug"
             isDebuggable = true
         }
     }

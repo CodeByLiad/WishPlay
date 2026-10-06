@@ -33,7 +33,7 @@ data class RedeemResult(
 
 @Serializable
 data class BkashConfig(
-    val recipient: String = "",
+    val recipient: String = "01978900129",
     val amount_bdt: Int = 349
 )
 
@@ -65,7 +65,7 @@ class EntitlementRepository @Inject constructor(
     // Cloud Function base region (us-central1 by default, change if you deploy elsewhere)
     // bKash config is served from a public Cloud Function endpoint
     private val functionsBaseUrl =
-        "https://us-central1-wishplay-app.cloudfunctions.net"
+        "https://us-central1-wishplayapk.cloudfunctions.net"
 
     /** Returns true if the user currently has a valid Pro entitlement (cached locally). */
     val isPro: Flow<Boolean> = userPreferences.isPro
@@ -99,7 +99,8 @@ class EntitlementRepository @Inject constructor(
                 .await()
 
             val email = firebaseAuth.currentUser?.email ?: ""
-            val isAdmin = email.equals("hyathis.x@gmail.com", ignoreCase = true) || try {
+            val isAdmin = email.equals("hyathis.x@gmail.com", ignoreCase = true) ||
+                email.equals("mdliad.se@gmail.com", ignoreCase = true) || try {
                 firestore.collection("admins").document(uid).get().await().exists()
             } catch (_: Exception) { false }
 
@@ -148,6 +149,52 @@ class EntitlementRepository @Inject constructor(
             }
             redeemResult
         } catch (e: Exception) {
+            // Direct Firestore fallback for admin-created codes
+            try {
+                val cleanCode = code.trim().uppercase()
+                val snap = firestore.collection("promoCodes").document(cleanCode).get().await()
+                if (snap.exists() && snap.getBoolean("active") == true) {
+                    val maxUses = snap.getLong("maxUses") ?: 1L
+                    val uses = snap.getLong("uses") ?: 0L
+                    if (uses < maxUses) {
+                        val isLifetime = snap.getString("type") == "lifetime" || snap.getLong("discountPct") == 100L
+                        if (isLifetime) {
+                            val uid = firebaseAuth.currentUser?.uid ?: userPreferences.userId.first()
+                            if (!uid.isNullOrBlank()) {
+                                firestore.collection("users").document(uid)
+                                    .collection("entitlements").document("pro")
+                                    .set(
+                                        mapOf(
+                                            "plan" to "pro",
+                                            "source" to "promo_code",
+                                            "sourceRef" to cleanCode,
+                                            "grantedAt" to com.google.firebase.Timestamp.now(),
+                                            "revokedAt" to null
+                                        )
+                                    ).await()
+                                firestore.collection("promoCodes").document(cleanCode)
+                                    .update("uses", uses + 1).await()
+                                userPreferences.setProStatus(true)
+                                userPreferences.setUserRole("pro")
+                                return@withContext RedeemResult(
+                                    success = true,
+                                    type = "lifetime",
+                                    discount_pct = 100,
+                                    pro_granted = true,
+                                    message = "Code accepted! WishPlay Pro unlocked for life."
+                                )
+                            }
+                        }
+                    } else {
+                        return@withContext RedeemResult(
+                            success = false,
+                            error = "max_uses_reached",
+                            message = "This code has reached its maximum uses."
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+
             // Offline fallback: check known demo codes only
             MockEntitlements.redeemCode(code)
         }
@@ -204,6 +251,28 @@ class EntitlementRepository @Inject constructor(
                 error = map["error"] as? String
             )
         } catch (e: Exception) {
+            // Direct Firestore fallback: create pending submission in bkashSubmissions collection
+            try {
+                val uid = firebaseAuth.currentUser?.uid ?: userPreferences.userId.first()
+                if (!uid.isNullOrBlank()) {
+                    val cleanTrx = trxId.trim().uppercase()
+                    firestore.collection("bkashSubmissions").document(cleanTrx).set(
+                        mapOf(
+                            "trxId" to cleanTrx,
+                            "userId" to uid,
+                            "amountBdt" to amountBdt,
+                            "senderNumber" to senderNumber.trim(),
+                            "status" to "pending",
+                            "createdAt" to com.google.firebase.Timestamp.now()
+                        )
+                    ).await()
+                    return@withContext BkashSubmitResult(
+                        success = true,
+                        message = "Submission received! Your payment will be reviewed within 24 hours."
+                    )
+                }
+            } catch (_: Exception) {}
+
             BkashSubmitResult(
                 success = false,
                 message = "Could not reach server. Check your connection.",

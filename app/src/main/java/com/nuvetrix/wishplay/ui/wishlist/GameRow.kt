@@ -87,7 +87,8 @@ fun GameRow(
                 title = game.title,
                 hue = Color(android.graphics.Color.parseColor(game.hueHex)),
                 shapeType = CookieShapeType.fromKey(game.shapeKey),
-                size = 52.dp
+                size = 52.dp,
+                imageUrl = game.logoUrl ?: game.coverUrl
             )
 
             Spacer(modifier = Modifier.width(14.dp))

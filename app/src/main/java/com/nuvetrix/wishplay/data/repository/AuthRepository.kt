@@ -29,7 +29,7 @@ import javax.inject.Singleton
 // This is the OAuth 2.0 client ID for your web application, NOT the Android one.
 // Replace this with the actual value from your Firebase project.
 private const val WEB_CLIENT_ID =
-    "821356552132-REPLACE_WITH_YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
+    "821356552132-o9janc3riml5nfsamptnp0g3itv0717j.apps.googleusercontent.com"
 
 @Singleton
 class AuthRepository @Inject constructor(
@@ -57,10 +57,16 @@ class AuthRepository @Inject constructor(
         val email = args[1] as String?
         val name = args[2] as String?
         val avatar = args[3] as String?
-        val role = (args[4] as? String) ?: "guest"
+        val rawRole = (args[4] as? String) ?: "guest"
         val isPro = (args[5] as? Boolean) ?: false
 
-        if (role == "guest" || id.isNullOrBlank()) {
+        val effectiveEmail = firebaseAuth.currentUser?.email ?: email ?: ""
+        val isAdmin = effectiveEmail.equals("hyathis.x@gmail.com", ignoreCase = true) ||
+            effectiveEmail.equals("mdliad.se@gmail.com", ignoreCase = true) ||
+            rawRole == "admin"
+        val role = if (isAdmin) "admin" else rawRole
+
+        if (role == "guest" || (id.isNullOrBlank() && firebaseAuth.currentUser == null)) {
             AuthUser(
                 id = "",
                 email = "List stored on this phone only",
@@ -71,12 +77,12 @@ class AuthRepository @Inject constructor(
             )
         } else {
             AuthUser(
-                id = id,
-                email = email ?: "",
-                name = name ?: "You",
-                avatarUrl = avatar,
+                id = id ?: firebaseAuth.currentUser?.uid ?: "",
+                email = effectiveEmail,
+                name = name ?: firebaseAuth.currentUser?.displayName ?: "You",
+                avatarUrl = avatar ?: firebaseAuth.currentUser?.photoUrl?.toString(),
                 role = role,
-                isPro = isPro || role == "pro" || role == "admin"
+                isPro = isPro || role == "pro" || isAdmin
             )
         }
     }
@@ -134,7 +140,9 @@ class AuthRepository @Inject constructor(
                 }
 
                 val email = fbUser.email ?: ""
-                val isAdmin = email.equals("hyathis.x@gmail.com", ignoreCase = true) || withContext(Dispatchers.IO) { checkIsAdminFromFirestore(fbUser.uid) }
+                val isAdmin = email.equals("hyathis.x@gmail.com", ignoreCase = true) ||
+                    email.equals("mdliad.se@gmail.com", ignoreCase = true) ||
+                    withContext(Dispatchers.IO) { checkIsAdminFromFirestore(fbUser.uid) }
                 val isPro = isAdmin || withContext(Dispatchers.IO) { fetchIsProFromFirestore(fbUser.uid) }
                 val role = if (isAdmin) "admin" else if (isPro) "pro" else "free"
 

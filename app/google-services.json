@@ -12,7 +12,20 @@
           "package_name": "com.nuvetrix.wishplay"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "821356552132-dmapo1gf0ogsps489ba70cmkpsdaqgob.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.nuvetrix.wishplay",
+            "certificate_hash": "d0a40728fcd55a528022181c1a56cc8316aa0aa6"
+          }
+        },
+        {
+          "client_id": "821356552132-o9janc3riml5nfsamptnp0g3itv0717j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyC6K6kHV43qwj2sfAcbDIjo6Dp9F4Wbs7k"
@@ -20,26 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:821356552132:android:01d7f45de127f18e044e91",
-        "android_client_info": {
-          "package_name": "com.nuvetrix.wishplay.debug"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyC6K6kHV43qwj2sfAcbDIjo6Dp9F4Wbs7k"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "821356552132-o9janc3riml5nfsamptnp0g3itv0717j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

@@ -126,7 +126,8 @@ fun NextDropHeroCard(
                     title = game.title,
                     hue = Color(android.graphics.Color.parseColor(game.hueHex)),
                     shapeType = CookieShapeType.fromKey(game.shapeKey),
-                    size = 64.dp
+                    size = 64.dp,
+                    imageUrl = game.logoUrl ?: game.coverUrl
                 )
             }
 
