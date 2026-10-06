@@ -975,7 +975,7 @@ private fun AccountSection(
             ProfileListItem(
                 icon = Icons.Default.Info,
                 title = "About",
-                subtitle = "WishPlay is made by Nuvetrix",
+                subtitle = "WishPlay is made by Jinatra",
                 showChevron = false
             )
 

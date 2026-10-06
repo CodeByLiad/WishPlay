@@ -21,7 +21,7 @@ import javax.inject.Singleton
 class AppSecurityManager @Inject constructor() {
 
     companion object {
-        // Nuvetrix official release signing certificate SHA-256 digest
+        // Jinatra official release signing certificate SHA-256 digest
         const val OFFICIAL_RELEASE_SHA256 = "64:23:4B:91:38:61:94:0A:68:57:9F:50:5B:73:C0:B0:86:14:4E:51:7A:FA:F8:8C:FE:19:D4:4F:92:4B:27:32"
 
         // Default debug signing certificate SHA-256 digest (Android SDK debug.keystore)
@@ -45,7 +45,7 @@ class AppSecurityManager @Inject constructor() {
     }
 
     /**
-     * Verifies that the app's active signature matches the legitimate Nuvetrix release certificate
+     * Verifies that the app's active signature matches the legitimate Jinatra release certificate
      * (or debug certificate in debug builds).
      */
     fun isAppSignatureValid(context: Context): Boolean {

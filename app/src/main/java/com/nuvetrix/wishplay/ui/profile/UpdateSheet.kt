@@ -157,7 +157,7 @@ fun UpdateSheet(
                     modifier = Modifier.size(18.dp)
                 )
                 Text(
-                    text = "SHA-256 verified · Signed with official Nuvetrix key",
+                    text = "SHA-256 verified · Signed with official Jinatra key",
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                     color = customColors.success
                 )

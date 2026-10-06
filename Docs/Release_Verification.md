@@ -1,7 +1,7 @@
 # WishPlay Release Verification & Security Hardening (Phase 7)
 
-**Product:** WishPlay (`com.nuvetrix.wishplay`)  
-**Publisher:** Nuvetrix  
+**Product:** WishPlay (`com.Jinatra.wishplay`)  
+**Publisher:** Jinatra  
 **Build Type:** Release (R8 full mode, resource shrinking, APK Signature Scheme v2 & v3)  
 **Artifact:** `app/build/outputs/apk/release/app-release.apk`  
 **Size:** 18,447,146 bytes (~17.5 MB — below PRD 20 MB ceiling)  
@@ -18,7 +18,7 @@
 | **Brute-force promo codes** | 8+ random chars, rate limits, max uses, one use per account | `WP-XXXX-XXXX` format, single-transaction redemption in `redeemCode` Cloud Function, server rate limits. | **Verified** |
 | **Reuse or fake bKash TrxID** | Unique TrxID in DB; admin review | Firestore unique TrxID constraint; admin queue in `AdminRepository` / `adminReviewBkash` Cloud Function. | **Verified** |
 | **Become admin by patching app** | Admin role in server-only table | Role verification in `admin.ts` strictly checks `hyathis.x@gmail.com` and `/admins/{uid}` on the server. | **Verified** |
-| **Steal API keys from APK** | No secret ships in APK; keys live in backend secrets | All IGDB, Steam, and price API queries route through `WishPlayApiService` backend proxy (`https://wishplay-proxy.nuvetrix.workers.dev/v1`). Zero third-party keys in APK. | **Verified** |
+| **Steal API keys from APK** | No secret ships in APK; keys live in backend secrets | All IGDB, Steam, and price API queries route through `WishPlayApiService` backend proxy (`https://wishplay-proxy.Jinatra.workers.dev/v1`). Zero third-party keys in APK. | **Verified** |
 | **Read/change other users' data** | Row-level security on every table | Firestore security rules and service-role functions isolate user documents by UID. | **Verified** |
 | **Intercept network traffic** | HTTPS only, cleartext disabled, certificate pinning with backup pin | `network_security_config.xml` has `cleartextTrafficPermitted="false"`. `NetworkModule` configures OkHttp `CertificatePinner` with Google Trust Services R1, DigiCert G2 backup, Cloudflare ECC CA-3, and ISRG Root X1 backup. | **Verified** |
 | **Distribute malicious update APK** | In-app updater checks SHA-256 and verifies signing certificate matches installed app | `UpdateManager.downloadAndVerifyApk()` computes SHA-256 and executes `appSecurityManager.verifyApkSigningCertificateMatches()`. If certificate digest differs, file is deleted and install is aborted. | **Verified** |

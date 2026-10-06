@@ -4,7 +4,7 @@ Sep 30, 2026 · @Liad Bin Aowlad
 
 ## Overview
 
-WishPlay is a native Android app, published by Nuvetrix, that lets players save games from any platform to a wishlist and get alerted before they release. It ships as a direct APK (package `com.nuvetrix.wishplay`), free to use, with a one-time lifetime Pro upgrade.
+WishPlay is a native Android app, published by Jinatra, that lets players save games from any platform to a wishlist and get alerted before they release. It ships as a direct APK (package `com.Jinatra.wishplay`), free to use, with a one-time lifetime Pro upgrade.
 
 **Problem.** Players follow games across PC, consoles and mobile, and release dates are scattered across stores, trailers and social posts. Dates also move. People forget what they wanted to play, or miss the launch.
 
@@ -258,7 +258,7 @@ No Android app can be made impossible to mod. The goal is that a modded APK gets
 1. **Entitlement lives on the server.** The `entitlements` table can only be written by server functions: the Paddle webhook, bKash approval, code redemption, or the admin setup.
 2. **Server-side features check the account, not the app.** The backend only returns price data to Pro accounts, and the sync API refuses to store more than 25 games for non-Pro accounts. A modded app can pretend locally, but these features simply don't work for it.
 3. **Signed entitlement token.** For local Pro features (unlimited local list, accent themes, widget), the server issues a short-lived token signed with an Ed25519 private key that never leaves the server. It holds the user ID, install ID, plan and an expiry of 14 days. The app verifies it with the public key and refreshes it whenever online. With no valid token, local Pro features switch off.
-4. **Hardware key attestation before issuing a token.** On first sign-in the app creates a key in the Android Keystore with a server-provided challenge. The attestation certificate chain, signed by the phone's secure hardware, reports the app's package name and signing-certificate digest. The server checks the chain against Google's root certificates and confirms the digest matches the Nuvetrix release certificate. A modded APK must be re-signed with a different key, so it fails this check and never receives a Pro token.
+4. **Hardware key attestation before issuing a token.** On first sign-in the app creates a key in the Android Keystore with a server-provided challenge. The attestation certificate chain, signed by the phone's secure hardware, reports the app's package name and signing-certificate digest. The server checks the chain against Google's root certificates and confirms the digest matches the Jinatra release certificate. A modded APK must be re-signed with a different key, so it fails this check and never receives a Pro token.
 5. **App hardening** to slow down patching: R8 full-mode obfuscation, release logging stripped, runtime check of the app's own signing certificate, and light detection of hooking tools and root. These never block the free app; they only stop the phone from requesting a Pro token and flag the install for review.
 6. **Quiet failure.** When tampering is detected, the app doesn't crash or show a warning that tells a modder what triggered. Pro features just stay locked.
 
@@ -293,7 +293,7 @@ Play Integrity's app-recognition check is built around Play Store distribution, 
 
 ## Distribution and updates
 
-WishPlay is released as a signed APK on GitHub Releases and a download page on the Nuvetrix website.
+WishPlay is released as a signed APK on GitHub Releases and a download page on the Jinatra website.
 
 - **Signing.** APK Signature Scheme v2 and v3. The release keystore is kept offline with two encrypted backups; losing it means users can't update, so this is critical.
 - **Verification for users.** The download page lists the APK's SHA-256 and the signing-certificate fingerprint.
@@ -342,5 +342,5 @@ Each phase ends with a working APK you can install and test.
 
 ## Open decisions
 
-- [ ] **Nuvetrix website and domain** for the download page, privacy policy and Paddle seller approval. Not chosen yet; waiting on the Nuvetrix site going live. Phases 1 to 6 do not need it. The share links in the prototype read `wishplay.app/l/...` as a placeholder, so the share base URL must be a config value rather than a literal. Paddle's seller review needs a live site showing the product, pricing and a refund policy and can take several days, so start it as soon as the domain exists.
+- [ ] **Jinatra website and domain** for the download page, privacy policy and Paddle seller approval. Not chosen yet; waiting on the Jinatra site going live. Phases 1 to 6 do not need it. The share links in the prototype read `wishplay.app/l/...` as a placeholder, so the share base URL must be a config value rather than a literal. Paddle's seller review needs a live site showing the product, pricing and a refund policy and can take several days, so start it as soon as the domain exists.
 - [ ] **Paddle's quote for a $2.99 product.** Paddle's standard 5% + $0.50 rate applies at $10 and above; below that is custom pricing through their sales team. Get the quote before building the checkout, and if it doesn't work, compare Lemon Squeezy.

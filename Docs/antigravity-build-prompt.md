@@ -16,7 +16,7 @@ SOURCES OF TRUTH
   Where the PRD and the prototype disagree, the PRD wins for behaviour and the prototype wins for layout and wording.
 
 WHAT TO BUILD
-Package com.nuvetrix.wishplay. Kotlin, Jetpack Compose with Material 3 Expressive, MVVM with a
+Package com.Jinatra.wishplay. Kotlin, Jetpack Compose with Material 3 Expressive, MVVM with a
 repository layer, Hilt, Room encrypted with SQLCipher, WorkManager, OkHttp with certificate pinning,
 Coil, Credential Manager + Supabase Auth, Jetpack Glance for the widget. Backend is Supabase
 (Postgres, Auth, Edge Functions in TypeScript). Payments through Paddle Billing. Minimum Android 8.0
@@ -106,5 +106,5 @@ Answer these before the phase they block. Fill each row in as it is decided.
 
 | Decision | Blocks | Status |
 | --- | --- | --- |
-| Nuvetrix website and domain | Phase 7 | Not chosen. Waiting on the Nuvetrix site going live. Build phases 1-6 without it. The share links in the prototype read `wishplay.app/l/...` as a placeholder; make the share base URL a config value, not a literal. Paddle seller approval needs a live site with the product, pricing and a refund policy, and can take days, so start it as soon as the domain exists |
+| Jinatra website and domain | Phase 7 | Not chosen. Waiting on the Jinatra site going live. Build phases 1-6 without it. The share links in the prototype read `wishplay.app/l/...` as a placeholder; make the share base URL a config value, not a literal. Paddle seller approval needs a live site with the product, pricing and a refund policy, and can take days, so start it as soon as the domain exists |
 | Paddle's quote for a $2.99 product | Phase 5 | Not requested yet. Paddle's standard 5% + $0.50 applies at $10 and above; below that is custom pricing through their sales team. If the quote is unworkable, compare Lemon Squeezy before building the checkout |

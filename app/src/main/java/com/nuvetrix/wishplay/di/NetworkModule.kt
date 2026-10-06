@@ -33,8 +33,10 @@ abstract class NetworkModule {
                 .add("*.cloudfunctions.net", "sha256/i7WTqTvh0OioIruIfFR4kRqhVtUGF1UvvW9FnKUGuOI=")
                 // Cloudflare Inc ECC CA-3 (Workers)
                 .add("*.nuvetrix.workers.dev", "sha256/kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=")
+                .add("*.jinatra.workers.dev", "sha256/kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=")
                 // ISRG Root X1 Backup
                 .add("*.nuvetrix.workers.dev", "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=")
+                .add("*.jinatra.workers.dev", "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=")
                 .build()
         }
 

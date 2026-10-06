@@ -19,7 +19,7 @@ class SecurityAndReleaseTest {
     @Test
     fun testSha256FingerprintComputation() {
         val manager = AppSecurityManager()
-        val sampleBytes = "NuvetrixWishPlayReleaseCertificate".toByteArray(Charsets.UTF_8)
+        val sampleBytes = "JinatraWishPlayReleaseCertificate".toByteArray(Charsets.UTF_8)
         val fingerprint = manager.computeSha256Fingerprint(sampleBytes)
 
         assertNotNull(fingerprint)
