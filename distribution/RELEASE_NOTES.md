@@ -24,7 +24,7 @@ Never miss a game drop. One unified list for every video game you are waiting fo
 
 | Asset | Size | SHA-256 Checksum |
 | :--- | :--- | :--- |
-| **`wishplay-v1.0.0.apk`** | ~17.5 MB | `da9233c6c3f95e4befea8cb9c353d3c9f24457b9035a5a7502a6d5faf250745e` |
+| **`wishplay-v1.0.0.apk`** | ~17.6 MB | `24733552a6e4ac115c5b9d527c57ffa24d46e03b093b29da10b3a1c0446d9401` |
 | **`update_manifest.json`** | ~400 B | In-app update descriptor |
 
 #### Verify APK Checksum

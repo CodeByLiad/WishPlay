@@ -22,7 +22,7 @@ class AppSecurityManager @Inject constructor() {
 
     companion object {
         // Jinatra official release signing certificate SHA-256 digest
-        const val OFFICIAL_RELEASE_SHA256 = "64:23:4B:91:38:61:94:0A:68:57:9F:50:5B:73:C0:B0:86:14:4E:51:7A:FA:F8:8C:FE:19:D4:4F:92:4B:27:32"
+        const val OFFICIAL_RELEASE_SHA256 = "44:42:F4:39:8C:DC:8D:F6:30:A3:C1:17:5A:F5:07:90:D9:64:1E:8F:95:29:2E:FA:68:29:60:4C:7C:37:10:FE"
 
         // Default debug signing certificate SHA-256 digest (Android SDK debug.keystore)
         const val KNOWN_DEBUG_SHA256 = "A4:0D:A8:0A:59:D1:70:CA:A9:50:CF:15:C1:8C:45:4D:47:A3:9B:26:98:9D:8B:64:0E:CD:74:5B:A7:1B:F5:DC"

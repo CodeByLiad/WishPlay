@@ -4,8 +4,8 @@
 **Publisher:** Jinatra  
 **Build Type:** Release (R8 full mode, resource shrinking, APK Signature Scheme v2 & v3)  
 **Artifact:** `app/build/outputs/apk/release/app-release.apk`  
-**Size:** 18,447,146 bytes (~17.5 MB — below PRD 20 MB ceiling)  
-**SHA-256 Checksum:** `555a4e4874ec06d71281aab90ee748d363281f70222ef3a3a003dc9b4cb2ce41`
+**Size:** 18,464,022 bytes (~17.6 MB — below PRD 20 MB ceiling)  
+**SHA-256 Checksum:** `24733552a6e4ac115c5b9d527c57ffa24d46e03b093b29da10b3a1c0446d9401`
 
 ---
 
