@@ -57,6 +57,7 @@ class SearchViewModel @Inject constructor(
     private val _snackbar = MutableStateFlow<String?>(null)
     private val _pageState = MutableStateFlow(Pair(false, null as String?))
     private var searchJob: Job? = null
+    private var otherJob: Job? = null
     private var loadedPage = 0
     private var generation = 0
     private val _isPro = userPreferences.userRole
@@ -124,6 +125,7 @@ class SearchViewModel @Inject constructor(
         }
         generation++
         searchJob?.cancel()
+        otherJob?.cancel()
         _results.value = emptyList()
         _otherResults.value = emptyList()
         _pageState.value = false to null
@@ -214,8 +216,30 @@ class SearchViewModel @Inject constructor(
 
     fun retry() = performSearch(_query.value, _selectedPlatform.value, if (_results.value.isEmpty()) 1 else loadedPage + 1)
 
+    /**
+     * Fills the "On other platforms" section after the primary results are already on screen.
+     *
+     * Runs in its own coroutine so it cannot delay them: the catalog answers a warm query in well
+     * under a second but a cold one has been measured at 22s, and this is only ever supplementary.
+     * Failure is silent — the section stays absent and the primary results are untouched.
+     */
+    private fun loadOtherPlatforms(q: String, plat: String, shown: List<Game>, requestGeneration: Int) {
+        otherJob?.cancel()
+        otherJob = viewModelScope.launch {
+            val others = try {
+                searchRepository.searchOtherPlatforms(q, plat, shown)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                emptyList()
+            }
+            if (requestGeneration == generation) _otherResults.value = others
+        }
+    }
+
     private fun performSearch(q: String, plat: String, page: Int = 1) {
         searchJob?.cancel()
+        otherJob?.cancel()
         val requestGeneration = ++generation
         if (page == 1) {
             loadedPage = 0
@@ -229,13 +253,14 @@ class SearchViewModel @Inject constructor(
             try {
                 val result = searchRepository.searchGamesPage(q, plat, page)
                 if (requestGeneration == generation) {
-                    _results.value = (if (page == 1) result.games else _results.value + result.games).distinctBy { it.id }
-                    if (page == 1) _otherResults.value = result.otherPlatformGames
+                    val merged = (if (page == 1) result.games else _results.value + result.games).distinctBy { it.id }
+                    _results.value = merged
                     loadedPage = page
                     _pageState.value = result.hasMore to null
                     if (page == 1 || result.warnings.isNotEmpty()) {
                         _sourceNotice.value = result.warnings.takeIf { it.isNotEmpty() }?.joinToString(" ")
                     }
+                    if (page == 1) loadOtherPlatforms(q, plat, merged, requestGeneration)
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled

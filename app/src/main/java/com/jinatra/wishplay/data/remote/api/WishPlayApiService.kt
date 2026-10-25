@@ -23,7 +23,6 @@ import javax.inject.Singleton
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.withTimeoutOrNull
 import com.jinatra.wishplay.domain.model.ReleaseEvidence
 import com.jinatra.wishplay.domain.model.catalogTitleKey
 
@@ -31,6 +30,9 @@ interface WishPlayApiService {
     suspend fun searchGames(query: String, platform: String): List<GameDto>
     suspend fun searchGamesPage(query: String, platform: String, page: Int): GameSearchPage =
         GameSearchPage(if (page == 1) searchGames(query, platform) else emptyList())
+
+    /** Games matching [query] that the [platform] filter excluded, minus anything in [shown]. */
+    suspend fun searchOtherPlatforms(query: String, platform: String, shown: List<GameDto>): List<GameDto> = emptyList()
     suspend fun getGameDetails(id: String): GameDto?
 }
 
@@ -38,11 +40,6 @@ interface WishPlayApiService {
 class WishPlayApiServiceImpl @Inject constructor(
     private val client: OkHttpClient
 ) : WishPlayApiService {
-
-    private companion object {
-        /** How long the supplementary cross-platform pass may hold up results already in hand. */
-        const val CROSS_PLATFORM_BUDGET_MS = 3_000L
-    }
 
     // RAWG Live Video Game Database API
     private val rawgApiKey = "0daeeb89a3e440e7864d61b5e2a94d26"
@@ -57,11 +54,6 @@ class WishPlayApiServiceImpl @Inject constructor(
         val primary = async { attempt { searchRawgPage(query, platform, page) } }
         val steam = if (platform in listOf("All", "PC")) async { attempt { stores.searchSteam(query) } } else null
         val apple = if (platform in listOf("All", "iOS")) async { attempt { stores.searchApple(query) } } else null
-        // attempt { } must stay INSIDE the async: the throw below leaves this deferred unawaited,
-        // and a child that completes exceptionally would cancel the whole scope with it.
-        val crossPlatform = if (mapPlatformToRawgId(platform).isNotEmpty()) {
-            async { attempt { searchRawgPage(query, "All", page) } }
-        } else null
         val rawgResult = primary.await()
         val steamResult = steam?.await()
         val appleResult = apple?.await()
@@ -77,25 +69,10 @@ class WishPlayApiServiceImpl @Inject constructor(
             if (steamResult?.isFailure == true) add("Steam is unavailable; other results are still shown.")
             if (appleResult?.isFailure == true) add("App Store is unavailable; other results are still shown.")
         }
-        val merged = (base + unique).distinctBy { it.id }
-        // This pass is supplementary, so it never holds up results the user can already use.
-        // OkHttp allows 10s connect + 15s read; waiting that out would delay every search by up
-        // to 25s for a section that is only ever a bonus. Cancelling the deferred is what makes
-        // the budget real — a timed-out await alone leaves the child running and coroutineScope
-        // would still join it before returning.
-        val candidates = withTimeoutOrNull(CROSS_PLATFORM_BUDGET_MS) {
-            crossPlatform?.await()?.getOrNull()?.games
-        }.orEmpty()
-        crossPlatform?.cancel()
         GameSearchPage(
-            games = merged,
+            games = (base + unique).distinctBy { it.id },
             hasMore = rawgResult.getOrNull()?.hasMore == true,
-            warnings = warnings,
-            otherPlatformGames = selectOtherPlatformGames(
-                primary = merged,
-                candidates = candidates,
-                selectedPlatform = platform
-            )
+            warnings = warnings
         )
     }
 
@@ -121,6 +98,20 @@ class WishPlayApiServiceImpl @Inject constructor(
             games = (0 until results.length()).map { mapRawgGameToDto(results.getJSONObject(it)) },
             hasMore = !json.isNull("next") && json.optString("next").isNotBlank()
         )
+    }
+
+    /**
+     * Second, independent pass for the games a platform filter excluded.
+     *
+     * Deliberately not folded into [searchGamesPage]: RAWG answers a warm query in well under a
+     * second but a cold one has been measured at 22s, and this result is only ever supplementary.
+     * Fetching it separately means results the user can already act on are never held back, and a
+     * slow pass costs a late section rather than a late screen.
+     */
+    override suspend fun searchOtherPlatforms(query: String, platform: String, shown: List<GameDto>): List<GameDto> {
+        if (query.trim().length < 2 || mapPlatformToRawgId(platform).isEmpty()) return emptyList()
+        val unfiltered = attempt { searchRawgPage(query, "All", 1) }.getOrNull() ?: return emptyList()
+        return selectOtherPlatformGames(primary = shown, candidates = unfiltered.games, selectedPlatform = platform)
     }
 
     override suspend fun getGameDetails(id: String): GameDto? = withContext(Dispatchers.IO) {

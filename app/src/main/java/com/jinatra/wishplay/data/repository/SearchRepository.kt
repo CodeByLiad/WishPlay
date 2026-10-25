@@ -16,8 +16,7 @@ import javax.inject.Singleton
 data class SearchPageResult(
     val games: List<Game>,
     val hasMore: Boolean,
-    val warnings: List<String>,
-    val otherPlatformGames: List<Game>
+    val warnings: List<String>
 )
 
 @Singleton
@@ -61,10 +60,19 @@ class SearchRepository @Inject constructor(
         return SearchPageResult(
             games = response.games.map { it.toDomainModel() },
             hasMore = response.hasMore,
-            warnings = response.warnings,
-            otherPlatformGames = response.otherPlatformGames.map { it.toDomainModel() }
+            warnings = response.warnings
         )
     }
+
+    /**
+     * Games the platform filter excluded. Issued separately from [searchGamesPage] so a slow
+     * catalog response costs a late section rather than a late screen.
+     */
+    suspend fun searchOtherPlatforms(query: String, platform: String, shown: List<Game>): List<Game> =
+        apiService.searchOtherPlatforms(query, platform, shown.map { it.toCoverageDto() }).map { it.toDomainModel() }
+
+    /** Only the three fields the cross-platform dedupe reads; not a general domain-to-DTO mapping. */
+    private fun Game.toCoverageDto() = GameDto(id = id, title = title, platforms = platforms)
 
     suspend fun addGameToWishlist(game: Game, isPro: Boolean = false): Result<Unit> {
         // 1. Save game entity to Room

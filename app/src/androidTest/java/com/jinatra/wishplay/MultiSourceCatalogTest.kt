@@ -44,24 +44,29 @@ class MultiSourceCatalogTest {
             .body(body.toResponseBody("application/json".toMediaType())).build()
     }.build()
 
-    @Test fun platformFilterExclusionsAreOfferedSeparately() = runBlocking {
-        val page = WishPlayApiServiceImpl(coverageClient()).searchGamesPage("Ports", "PC", 1)
+    @Test fun platformFilterExclusionsAreFetchedSeparately() = runBlocking {
+        val api = WishPlayApiServiceImpl(coverageClient())
+        val page = api.searchGamesPage("Ports", "PC", 1)
+        // The primary call never pays for the section: it is a second, independent request.
         assertEquals(listOf("rawg_1"), page.games.map { it.id })
-        assertEquals(listOf("rawg_2"), page.otherPlatformGames.map { it.id })
-        assertEquals("Console Only", page.otherPlatformGames.single().title)
+
+        val others = api.searchOtherPlatforms("Ports", "PC", page.games)
+        assertEquals(listOf("rawg_2"), others.map { it.id })
+        assertEquals("Console Only", others.single().title)
     }
 
-    @Test fun unfilteredPassFailureLeavesPrimaryResultsIntact() = runBlocking {
-        val page = WishPlayApiServiceImpl(coverageClient(unfilteredCode = 503)).searchGamesPage("Ports", "PC", 1)
+    @Test fun crossPlatformFailureIsSilentAndEmpty() = runBlocking {
+        val api = WishPlayApiServiceImpl(coverageClient(unfilteredCode = 503))
+        val page = api.searchGamesPage("Ports", "PC", 1)
         assertEquals(listOf("rawg_1"), page.games.map { it.id })
-        assertTrue(page.otherPlatformGames.isEmpty())
-        // The supplementary pass must stay silent: its failure is not a degraded-source notice.
+        // A failed supplementary fetch is not a degraded-source notice.
         assertTrue(page.warnings.isEmpty())
+        assertTrue(api.searchOtherPlatforms("Ports", "PC", page.games).isEmpty())
     }
 
-    @Test fun loadMorePagesDoNotRefetchTheSection() = runBlocking {
-        val page = WishPlayApiServiceImpl(coverageClient()).searchGamesPage("Ports", "PC", 2)
-        assertTrue(page.otherPlatformGames.isEmpty())
+    @Test fun crossPlatformFetchIsSkippedWithoutAPlatformFilter() = runBlocking {
+        val api = WishPlayApiServiceImpl(coverageClient())
+        assertTrue(api.searchOtherPlatforms("Ports", "All", emptyList()).isEmpty())
     }
 
     private fun coverageClient(unfilteredCode: Int = 200) = OkHttpClient.Builder().addInterceptor { chain ->

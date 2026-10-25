@@ -6,7 +6,7 @@
 **Artifact:** `app/build/outputs/apk/release/app-release.apk`  
 **Size:** 18,511,970 bytes (~17.7 MB — below PRD 20 MB ceiling)  
 **Version:** 1.1.0 (versionCode 3)  
-**SHA-256 Checksum:** `1ffb4a10d5390fb848f32e7ee23db7c49d4a28b1fae357c07a6de2e27d78d954`  
+**SHA-256 Checksum:** `a3abebeb01437af2999fc0b76b1af7af807d4dd8ff7c8b03b352f4ad7d0fa981`  
 **Signing Certificate SHA-256:** `BF:AC:F7:85:47:D7:04:0B:A0:4F:C6:DC:74:83:86:3B:4A:22:89:1F:6E:6C:45:47:A0:E8:41:26:85:F4:50:A8`
 
 ---
