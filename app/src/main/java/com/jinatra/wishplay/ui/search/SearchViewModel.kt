@@ -26,6 +26,7 @@ data class SearchUiState(
     val query: String = "",
     val selectedPlatform: String = "All",
     val results: List<Game> = emptyList(),
+    val otherPlatformResults: List<Game> = emptyList(),
     val recentSearches: List<String> = emptyList(),
     val popularQueries: List<String> = emptyList(),
     val wishlistedIds: Set<String> = emptySet(),
@@ -52,6 +53,7 @@ class SearchViewModel @Inject constructor(
     private val _selectedPlatform = MutableStateFlow("All")
     private val _isLoading = MutableStateFlow(false)
     private val _results = MutableStateFlow<List<Game>>(emptyList())
+    private val _otherResults = MutableStateFlow<List<Game>>(emptyList())
     private val _snackbar = MutableStateFlow<String?>(null)
     private val _pageState = MutableStateFlow(Pair(false, null as String?))
     private var searchJob: Job? = null
@@ -70,19 +72,23 @@ class SearchViewModel @Inject constructor(
         combine(_query, _selectedPlatform, _isLoading) { q, plat, loading ->
             Triple(q, plat, loading)
         },
-        combine(_results, wishlistRepository.wishlistGames) { results, wishlist ->
+        combine(_results, _otherResults, wishlistRepository.wishlistGames) { results, others, wishlist ->
             val ids = wishlist.map { it.id }.toSet()
-            val mapped = results.map { it.copy(inWishlist = ids.contains(it.id)) }
-            Pair(mapped, ids)
+            Triple(
+                results.map { it.copy(inWishlist = ids.contains(it.id)) },
+                ids,
+                others.map { it.copy(inWishlist = ids.contains(it.id)) }
+            )
         },
         searchRepository.recentSearches,
         _snackbar,
         _metadata
-    ) { (q, plat, loading), (results, ids), recent, snackbar, metadata ->
+    ) { (q, plat, loading), (results, ids, otherResults), recent, snackbar, metadata ->
         SearchUiState(
             query = q,
             selectedPlatform = plat,
             results = results,
+            otherPlatformResults = otherResults,
             recentSearches = recent,
             popularQueries = popularQueries,
             wishlistedIds = ids,
@@ -119,6 +125,7 @@ class SearchViewModel @Inject constructor(
         generation++
         searchJob?.cancel()
         _results.value = emptyList()
+        _otherResults.value = emptyList()
         _pageState.value = false to null
         _isLoading.value = true
         _query.value = newQuery
@@ -213,18 +220,22 @@ class SearchViewModel @Inject constructor(
         if (page == 1) {
             loadedPage = 0
             _results.value = emptyList()
+            _otherResults.value = emptyList()
             _sourceNotice.value = null
         }
         searchJob = viewModelScope.launch {
             _isLoading.value = true
             _pageState.value = _pageState.value.first to null
             try {
-                val (list, more, warnings) = searchRepository.searchGamesPage(q, plat, page)
+                val result = searchRepository.searchGamesPage(q, plat, page)
                 if (requestGeneration == generation) {
-                    _results.value = (if (page == 1) list else _results.value + list).distinctBy { it.id }
+                    _results.value = (if (page == 1) result.games else _results.value + result.games).distinctBy { it.id }
+                    if (page == 1) _otherResults.value = result.otherPlatformGames
                     loadedPage = page
-                    _pageState.value = more to null
-                    if (page == 1 || warnings.isNotEmpty()) _sourceNotice.value = warnings.takeIf { it.isNotEmpty() }?.joinToString(" ")
+                    _pageState.value = result.hasMore to null
+                    if (page == 1 || result.warnings.isNotEmpty()) {
+                        _sourceNotice.value = result.warnings.takeIf { it.isNotEmpty() }?.joinToString(" ")
+                    }
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled

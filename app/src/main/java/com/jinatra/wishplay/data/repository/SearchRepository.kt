@@ -13,6 +13,13 @@ import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
 
+data class SearchPageResult(
+    val games: List<Game>,
+    val hasMore: Boolean,
+    val warnings: List<String>,
+    val otherPlatformGames: List<Game>
+)
+
 @Singleton
 class SearchRepository @Inject constructor(
     private val apiService: WishPlayApiService,
@@ -49,9 +56,14 @@ class SearchRepository @Inject constructor(
         }
     }
 
-    suspend fun searchGamesPage(query: String, platform: String, page: Int): Triple<List<Game>, Boolean, List<String>> {
+    suspend fun searchGamesPage(query: String, platform: String, page: Int): SearchPageResult {
         val response = apiService.searchGamesPage(query, platform, page)
-        return Triple(response.games.map { it.toDomainModel() }, response.hasMore, response.warnings)
+        return SearchPageResult(
+            games = response.games.map { it.toDomainModel() },
+            hasMore = response.hasMore,
+            warnings = response.warnings,
+            otherPlatformGames = response.otherPlatformGames.map { it.toDomainModel() }
+        )
     }
 
     suspend fun addGameToWishlist(game: Game, isPro: Boolean = false): Result<Unit> {
