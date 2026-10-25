@@ -1,11 +1,13 @@
 # WishPlay Release Verification & Security Hardening (Phase 7)
 
-**Product:** WishPlay (`com.Jinatra.wishplay`)  
+**Product:** WishPlay (`com.jinatra.wishplay`)  
 **Publisher:** Jinatra  
 **Build Type:** Release (R8 full mode, resource shrinking, APK Signature Scheme v2 & v3)  
 **Artifact:** `app/build/outputs/apk/release/app-release.apk`  
-**Size:** 18,464,022 bytes (~17.6 MB — below PRD 20 MB ceiling)  
-**SHA-256 Checksum:** `24733552a6e4ac115c5b9d527c57ffa24d46e03b093b29da10b3a1c0446d9401`
+**Size:** 18,511,970 bytes (~17.7 MB — below PRD 20 MB ceiling)  
+**Version:** 1.1.0 (versionCode 3)  
+**SHA-256 Checksum:** `d84589c71b61f36c5fe09a37144dc4266782f625cec7e565a16e27f34da3dd11`  
+**Signing Certificate SHA-256:** `BF:AC:F7:85:47:D7:04:0B:A0:4F:C6:DC:74:83:86:3B:4A:22:89:1F:6E:6C:45:47:A0:E8:41:26:85:F4:50:A8`
 
 ---
 
@@ -18,7 +20,7 @@
 | **Brute-force promo codes** | 8+ random chars, rate limits, max uses, one use per account | `WP-XXXX-XXXX` format, single-transaction redemption in `redeemCode` Cloud Function, server rate limits. | **Verified** |
 | **Reuse or fake bKash TrxID** | Unique TrxID in DB; admin review | Firestore unique TrxID constraint; admin queue in `AdminRepository` / `adminReviewBkash` Cloud Function. | **Verified** |
 | **Become admin by patching app** | Admin role in server-only table | Role verification in `admin.ts` strictly checks `hyathis.x@gmail.com` and `/admins/{uid}` on the server. | **Verified** |
-| **Steal API keys from APK** | No secret ships in APK; keys live in backend secrets | All IGDB, Steam, and price API queries route through `WishPlayApiService` backend proxy (`https://wishplay-proxy.Jinatra.workers.dev/v1`). Zero third-party keys in APK. | **Verified** |
+| **Steal API keys from APK** | No secret ships in APK; keys live in backend secrets | All IGDB, Steam, and price API queries route through `WishPlayApiService` backend proxy (`https://wishplay-proxy.jinatra.workers.dev/v1`). Zero third-party keys in APK. | **Verified** |
 | **Read/change other users' data** | Row-level security on every table | Firestore security rules and service-role functions isolate user documents by UID. | **Verified** |
 | **Intercept network traffic** | HTTPS only, cleartext disabled, certificate pinning with backup pin | `network_security_config.xml` has `cleartextTrafficPermitted="false"`. `NetworkModule` configures OkHttp `CertificatePinner` with Google Trust Services R1, DigiCert G2 backup, Cloudflare ECC CA-3, and ISRG Root X1 backup. | **Verified** |
 | **Distribute malicious update APK** | In-app updater checks SHA-256 and verifies signing certificate matches installed app | `UpdateManager.downloadAndVerifyApk()` computes SHA-256 and executes `appSecurityManager.verifyApkSigningCertificateMatches()`. If certificate digest differs, file is deleted and install is aborted. | **Verified** |
@@ -49,8 +51,9 @@ Get-FileHash app\build\outputs\apk\release\app-release.apk -Algorithm SHA256
 # Using Android SDK apksigner
 apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
 
-# Using JDK keytool
-keytool -printcert -jarfile app/build/outputs/apk/release/app-release.apk
+# Note: keytool cannot read this APK. Release builds use APK Signature Scheme v2/v3
+# only (v1 JAR signing is disabled), so keytool reports "Not a signed jar file".
+# Use apksigner above.
 ```
 
 ---

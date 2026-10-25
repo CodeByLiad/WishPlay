@@ -1,9 +1,9 @@
 {
-  "versionCode": 1,
-  "versionName": "1.0.0",
-  "apkUrl": "https://github.com/mdliad-se/WishPlay/releases/download/v1.0.0/wishplay-release.apk",
-  "sha256": "24733552a6e4ac115c5b9d527c57ffa24d46e03b093b29da10b3a1c0446d9401",
+  "versionCode": 3,
+  "versionName": "1.1.0",
+  "apkUrl": "https://github.com/jinatra/wishplay-release/releases/download/v1.1.0/WishPlay-1.1.0-Jinatra.apk",
+  "sha256": "d84589c71b61f36c5fe09a37144dc4266782f625cec7e565a16e27f34da3dd11",
   "minSupportedVersionCode": 1,
-  "releaseNotes": "Official v1.0.0 release. Powered by live RAWG video games database, offline-first SQLCipher encryption, Material 3 Expressive UI, and smart alerts.",
-  "publishedAt": "2026-10-05T16:38:00Z"
+  "releaseNotes": "Steam and App Store results alongside RAWG, per-platform tracking choices on each wishlisted game, JSON wishlist backup and import from Profile, and a database migration that preserves your existing games, wishlist and alerts.",
+  "publishedAt": "2026-10-25T00:00:00Z"
 }

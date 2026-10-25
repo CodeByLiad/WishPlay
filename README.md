@@ -79,6 +79,8 @@ cd WishPlay
 The compiled release APK will be generated at:
 `app/build/outputs/apk/release/app-release.apk`
 
+Version 1.0.1 uses the Android application ID `com.jinatra.wishplay` and the Jinatra signing certificate in `keystore/wishplay-jinatra-release.jks`. Configure signing credentials in the untracked `local.properties`; keep the original keystore for earlier releases. The new application ID installs separately from the previous app and does not inherit its local data. Firebase is registered for the new ID and its signing certificates; `node scripts/register-android-app.cjs --apply` refreshes that registration using the existing local service account. Run `node scripts/verify-catalog.cjs` for live platform search, artwork, and pagination checks.
+
 ---
 
 ## 🔒 Security & Privacy

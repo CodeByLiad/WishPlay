@@ -11,7 +11,6 @@
     <!-- Certificate pinning for WishPlay Cloud Function and API domains with backup pins -->
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">cloudfunctions.net</domain>
-        <domain includeSubdomains="true">nuvetrix.workers.dev</domain>
         <domain includeSubdomains="true">jinatra.workers.dev</domain>
         <domain includeSubdomains="true">firebaseio.com</domain>
         <domain includeSubdomains="true">googleapis.com</domain>

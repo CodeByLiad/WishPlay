@@ -12,15 +12,15 @@ plugins {
 }
 
 android {
-    namespace = "com.nuvetrix.wishplay"
+    namespace = "com.jinatra.wishplay"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nuvetrix.wishplay"
+        applicationId = "com.jinatra.wishplay"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -36,7 +36,7 @@ android {
                     FileInputStream(localPropsFile).use { load(it) }
                 }
             }
-            val projectKeystore = rootProject.file("keystore/wishplay-release.jks")
+            val projectKeystore = rootProject.file("keystore/wishplay-jinatra-release.jks")
             val keystorePath = localProperties.getProperty("WISHPLAY_KEYSTORE_FILE")
                 ?: project.findProperty("WISHPLAY_KEYSTORE_FILE")?.toString()
             val keystoreFile = if (keystorePath != null) rootProject.file(keystorePath) else if (projectKeystore.exists()) projectKeystore else null

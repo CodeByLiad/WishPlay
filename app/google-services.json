@@ -7,18 +7,34 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:821356552132:android:01d7f45de127f18e044e91",
+        "mobilesdk_app_id": "1:821356552132:android:5ae3d62ec1926f4a044e91",
         "android_client_info": {
-          "package_name": "com.nuvetrix.wishplay"
+          "package_name": "com.jinatra.wishplay"
         }
       },
       "oauth_client": [
         {
-          "client_id": "821356552132-dmapo1gf0ogsps489ba70cmkpsdaqgob.apps.googleusercontent.com",
+          "client_id": "821356552132-dtid54qovdphmqjrm3sbm1hme7as4adm.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.nuvetrix.wishplay",
+            "package_name": "com.jinatra.wishplay",
             "certificate_hash": "d0a40728fcd55a528022181c1a56cc8316aa0aa6"
+          }
+        },
+        {
+          "client_id": "821356552132-qrs9q4tab2uofck5e9l8si8dhqdhsduo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jinatra.wishplay",
+            "certificate_hash": "c48cf033fee8774e8471c010b5fc0e170208d0f0"
+          }
+        },
+        {
+          "client_id": "821356552132-tna5ar9jgla8ps2q2lme5krgkt3ad7k0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jinatra.wishplay",
+            "certificate_hash": "3f38151a1a482ec120a7d677a3fbfe03ff8d83d5"
           }
         },
         {

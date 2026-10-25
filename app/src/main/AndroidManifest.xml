@@ -36,7 +36,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="com.nuvetrix.wishplay.ACTION_SIMULATE_DATE_CHANGE" />
+                <action android:name="com.jinatra.wishplay.ACTION_SIMULATE_DATE_CHANGE" />
             </intent-filter>
         </receiver>
 

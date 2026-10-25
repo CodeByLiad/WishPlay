@@ -31,7 +31,7 @@
 }
 
 # 5. Jetpack Glance & Widgets
--keep class com.nuvetrix.wishplay.widget.** { *; }
+-keep class com.jinatra.wishplay.widget.** { *; }
 -keep class androidx.glance.** { *; }
 -keep class androidx.glance.appwidget.** { *; }
 
@@ -47,11 +47,11 @@
 -keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
 
 # 8. Domain Models & DTOs
--keep class com.nuvetrix.wishplay.domain.model.** { *; }
--keep class com.nuvetrix.wishplay.data.remote.dto.** { *; }
--keep class com.nuvetrix.wishplay.data.remote.update.** { *; }
--keep class com.nuvetrix.wishplay.data.local.entity.** { *; }
--keep class com.nuvetrix.wishplay.data.local.prefs.** { *; }
+-keep class com.jinatra.wishplay.domain.model.** { *; }
+-keep class com.jinatra.wishplay.data.remote.dto.** { *; }
+-keep class com.jinatra.wishplay.data.remote.update.** { *; }
+-keep class com.jinatra.wishplay.data.local.entity.** { *; }
+-keep class com.jinatra.wishplay.data.local.prefs.** { *; }
 
 # 9. Release Log Stripping (PRD line 262: release logging stripped)
 -assumenosideeffects class android.util.Log {
