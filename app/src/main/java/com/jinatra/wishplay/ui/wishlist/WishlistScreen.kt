@@ -433,7 +433,7 @@ private fun WishlistHeader(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "$totalCount games you're waiting on",
+                text = if (totalCount == 1) "1 game you're waiting on" else "$totalCount games you're waiting on",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

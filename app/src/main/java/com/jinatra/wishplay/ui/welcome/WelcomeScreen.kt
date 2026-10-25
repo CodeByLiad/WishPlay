@@ -406,13 +406,13 @@ private fun SetupStepLead(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Starfall Odyssey drops in $selectedLead",
+                            text = "A game you're tracking drops in $selectedLead",
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Nov 13 on PC, PS5 and Xbox",
+                            text = "Plus another reminder on release day",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
