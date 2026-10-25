@@ -3,7 +3,12 @@ package com.jinatra.wishplay.data.remote.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-data class GameSearchPage(val games: List<GameDto>, val hasMore: Boolean = false, val warnings: List<String> = emptyList())
+data class GameSearchPage(
+    val games: List<GameDto>,
+    val hasMore: Boolean = false,
+    val warnings: List<String> = emptyList(),
+    val otherPlatformGames: List<GameDto> = emptyList()
+)
 
 @Serializable
 data class SearchResponseDto(

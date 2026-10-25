@@ -43,4 +43,31 @@ class MultiSourceCatalogTest {
         Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(code).message("Fixture")
             .body(body.toResponseBody("application/json".toMediaType())).build()
     }.build()
+
+    @Test fun platformFilterExclusionsAreOfferedSeparately() = runBlocking {
+        val page = WishPlayApiServiceImpl(coverageClient()).searchGamesPage("Ports", "PC", 1)
+        assertEquals(listOf("rawg_1"), page.games.map { it.id })
+        assertEquals(listOf("rawg_2"), page.otherPlatformGames.map { it.id })
+        assertEquals("Console Only", page.otherPlatformGames.single().title)
+    }
+
+    @Test fun unfilteredPassFailureLeavesPrimaryResultsIntact() = runBlocking {
+        val page = WishPlayApiServiceImpl(coverageClient(unfilteredCode = 503)).searchGamesPage("Ports", "PC", 1)
+        assertEquals(listOf("rawg_1"), page.games.map { it.id })
+        assertTrue(page.otherPlatformGames.isEmpty())
+    }
+
+    private fun coverageClient(unfilteredCode: Int = 200) = OkHttpClient.Builder().addInterceptor { chain ->
+        val request = chain.request()
+        val pcGame = """{"id":1,"name":"Ports","slug":"ports","platforms":[{"platform":{"slug":"pc","name":"PC"}}]}"""
+        val consoleGame = """{"id":2,"name":"Console Only","slug":"console-only","platforms":[{"platform":{"slug":"playstation5","name":"PlayStation 5"}}]}"""
+        val filtered = request.url.queryParameter("platforms") != null
+        val (code, body) = when {
+            request.url.host == "api.rawg.io" && filtered -> 200 to """{"results":[$pcGame],"next":null}"""
+            request.url.host == "api.rawg.io" -> unfilteredCode to """{"results":[$pcGame,$consoleGame],"next":null}"""
+            else -> 200 to """{"items":[]}"""
+        }
+        Response.Builder().request(request).protocol(Protocol.HTTP_1_1).code(code).message("Fixture")
+            .body(body.toResponseBody("application/json".toMediaType())).build()
+    }.build()
 }

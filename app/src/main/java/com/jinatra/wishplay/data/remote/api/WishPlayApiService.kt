@@ -51,6 +51,7 @@ class WishPlayApiServiceImpl @Inject constructor(
         val primary = async { attempt { searchRawgPage(query, platform, page) } }
         val steam = if (platform in listOf("All", "PC")) async { attempt { stores.searchSteam(query) } } else null
         val apple = if (platform in listOf("All", "iOS")) async { attempt { stores.searchApple(query) } } else null
+        val crossPlatform = if (platform != "All") async { attempt { searchRawgPage(query, "All", page) } } else null
         val rawgResult = primary.await()
         val steamResult = steam?.await()
         val appleResult = apple?.await()
@@ -66,7 +67,17 @@ class WishPlayApiServiceImpl @Inject constructor(
             if (steamResult?.isFailure == true) add("Steam is unavailable; other results are still shown.")
             if (appleResult?.isFailure == true) add("App Store is unavailable; other results are still shown.")
         }
-        GameSearchPage((base + unique).distinctBy { it.id }, rawgResult.getOrNull()?.hasMore == true, warnings)
+        val merged = (base + unique).distinctBy { it.id }
+        GameSearchPage(
+            games = merged,
+            hasMore = rawgResult.getOrNull()?.hasMore == true,
+            warnings = warnings,
+            otherPlatformGames = selectOtherPlatformGames(
+                primary = merged,
+                candidates = crossPlatform?.await()?.getOrNull()?.games.orEmpty(),
+                selectedPlatform = platform
+            )
+        )
     }
 
     private suspend fun <T> attempt(block: suspend () -> T): Result<T> = try { Result.success(block()) }
