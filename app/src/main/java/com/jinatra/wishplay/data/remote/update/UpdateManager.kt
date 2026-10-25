@@ -40,7 +40,7 @@ class UpdateManager @Inject constructor(
     companion object {
         // Default update manifest endpoint (Cloud Function / static hosting endpoint)
         const val DEFAULT_MANIFEST_URL =
-            "https://raw.githubusercontent.com/jinatra/wishplay-release/main/update_manifest.json"
+            "https://raw.githubusercontent.com/CodeByLiad/wishplay-release/main/update_manifest.json"
 
         // 24 hours in milliseconds for launch check throttling
         private const val LAUNCH_CHECK_THROTTLE_MS = 24 * 60 * 60 * 1000L
