@@ -352,7 +352,8 @@ fun SearchScreen(
                 }
 
                 // Empty State (Query has no matches)
-                if (!uiState.isLoading && uiState.error == null && uiState.results.isEmpty()) {
+                if (!uiState.isLoading && uiState.error == null && uiState.results.isEmpty() &&
+                    uiState.otherPlatformResults.isEmpty()) {
                     item {
                         Column(
                             modifier = Modifier
@@ -396,6 +397,36 @@ fun SearchScreen(
                         onClick = { viewModel.openDetails(game, onNavigateToDetails) },
                         onToggleWishlist = { viewModel.toggleWishlist(game) }
                     )
+                }
+
+                if (uiState.otherPlatformResults.isNotEmpty()) {
+                    item {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Text(
+                                text = "On other platforms",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            val label = platformShortNames[uiState.selectedPlatform] ?: uiState.selectedPlatform
+                            Text(
+                                text = "Not listed on $label yet — these match your search on other platforms.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    items(uiState.otherPlatformResults, key = { "other_${it.id}" }) { game ->
+                        SearchResultRow(
+                            game = game,
+                            selectedPlatform = "All",
+                            isUpdating = game.id in uiState.busyGameIds,
+                            onClick = { viewModel.openDetails(game, onNavigateToDetails) },
+                            onToggleWishlist = { viewModel.toggleWishlist(game) }
+                        )
+                    }
                 }
 
                 if (uiState.error != null) {
