@@ -63,6 +63,29 @@ class PlatformCoverageTest {
     }
 
     @Test
+    fun storeSourcedPrimaryRowSuppressesItsRawgTwin() {
+        // The store passes key their rows steam_<appid> while RAWG keys rawg_<id>, so an id-only
+        // dedupe lets the same game render twice: once as a Steam PC row, once under a section
+        // whose subtitle says it is not on PC. Exactly the case this feature exists for.
+        val steamRow = game("steam_413150", "Palworld", "PC")
+        val rawgTwin = game("rawg_58812", "Palworld", "PS5")
+
+        val result = selectOtherPlatformGames(listOf(steamRow), listOf(rawgTwin), "PC")
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun titleMatchIgnoresPunctuationAndCase() {
+        val steamRow = game("steam_1", "Ori and the Will of the Wisps", "PC")
+        val rawgTwin = game("rawg_1", "Ori and the Will of the Wisps™", "Switch")
+
+        val result = selectOtherPlatformGames(listOf(steamRow), listOf(rawgTwin), "PC")
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
     fun allPlatformMeansNoSection() {
         val candidates = listOf(game("rawg_2", "Grand Theft Auto VI", "Xbox Series", "PS5"))
 

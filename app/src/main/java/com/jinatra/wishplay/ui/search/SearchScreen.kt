@@ -319,8 +319,9 @@ fun SearchScreen(
                     }
                 }
 
-                // Section Title
-                item {
+                // Section Title. Suppressed when every hit landed in the cross-platform section,
+                // which would otherwise read "Results" followed by nothing.
+                if (uiState.results.isNotEmpty() || uiState.otherPlatformResults.isEmpty()) item {
                     val title = when {
                         uiState.query.isNotBlank() -> "Results"
                         uiState.selectedPlatform == "All" -> "Explore all platforms"

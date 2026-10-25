@@ -55,6 +55,13 @@ class MultiSourceCatalogTest {
         val page = WishPlayApiServiceImpl(coverageClient(unfilteredCode = 503)).searchGamesPage("Ports", "PC", 1)
         assertEquals(listOf("rawg_1"), page.games.map { it.id })
         assertTrue(page.otherPlatformGames.isEmpty())
+        // The supplementary pass must stay silent: its failure is not a degraded-source notice.
+        assertTrue(page.warnings.isEmpty())
+    }
+
+    @Test fun loadMorePagesDoNotRefetchTheSection() = runBlocking {
+        val page = WishPlayApiServiceImpl(coverageClient()).searchGamesPage("Ports", "PC", 2)
+        assertTrue(page.otherPlatformGames.isEmpty())
     }
 
     private fun coverageClient(unfilteredCode: Int = 200) = OkHttpClient.Builder().addInterceptor { chain ->

@@ -23,6 +23,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withTimeoutOrNull
 import com.jinatra.wishplay.domain.model.ReleaseEvidence
 import com.jinatra.wishplay.domain.model.catalogTitleKey
 
@@ -38,6 +39,11 @@ class WishPlayApiServiceImpl @Inject constructor(
     private val client: OkHttpClient
 ) : WishPlayApiService {
 
+    private companion object {
+        /** How long the supplementary cross-platform pass may hold up results already in hand. */
+        const val CROSS_PLATFORM_BUDGET_MS = 3_000L
+    }
+
     // RAWG Live Video Game Database API
     private val rawgApiKey = "0daeeb89a3e440e7864d61b5e2a94d26"
     private val rawgBaseUrl = "https://api.rawg.io/api"
@@ -51,7 +57,11 @@ class WishPlayApiServiceImpl @Inject constructor(
         val primary = async { attempt { searchRawgPage(query, platform, page) } }
         val steam = if (platform in listOf("All", "PC")) async { attempt { stores.searchSteam(query) } } else null
         val apple = if (platform in listOf("All", "iOS")) async { attempt { stores.searchApple(query) } } else null
-        val crossPlatform = if (platform != "All") async { attempt { searchRawgPage(query, "All", page) } } else null
+        // attempt { } must stay INSIDE the async: the throw below leaves this deferred unawaited,
+        // and a child that completes exceptionally would cancel the whole scope with it.
+        val crossPlatform = if (mapPlatformToRawgId(platform).isNotEmpty()) {
+            async { attempt { searchRawgPage(query, "All", page) } }
+        } else null
         val rawgResult = primary.await()
         val steamResult = steam?.await()
         val appleResult = apple?.await()
@@ -68,13 +78,22 @@ class WishPlayApiServiceImpl @Inject constructor(
             if (appleResult?.isFailure == true) add("App Store is unavailable; other results are still shown.")
         }
         val merged = (base + unique).distinctBy { it.id }
+        // This pass is supplementary, so it never holds up results the user can already use.
+        // OkHttp allows 10s connect + 15s read; waiting that out would delay every search by up
+        // to 25s for a section that is only ever a bonus. Cancelling the deferred is what makes
+        // the budget real — a timed-out await alone leaves the child running and coroutineScope
+        // would still join it before returning.
+        val candidates = withTimeoutOrNull(CROSS_PLATFORM_BUDGET_MS) {
+            crossPlatform?.await()?.getOrNull()?.games
+        }.orEmpty()
+        crossPlatform?.cancel()
         GameSearchPage(
             games = merged,
             hasMore = rawgResult.getOrNull()?.hasMore == true,
             warnings = warnings,
             otherPlatformGames = selectOtherPlatformGames(
                 primary = merged,
-                candidates = crossPlatform?.await()?.getOrNull()?.games.orEmpty(),
+                candidates = candidates,
                 selectedPlatform = platform
             )
         )
