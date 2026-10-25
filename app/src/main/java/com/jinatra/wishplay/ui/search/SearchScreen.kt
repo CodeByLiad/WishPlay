@@ -321,7 +321,8 @@ fun SearchScreen(
 
                 // Section Title. Suppressed when every hit landed in the cross-platform section,
                 // which would otherwise read "Results" followed by nothing.
-                if (uiState.results.isNotEmpty() || uiState.otherPlatformResults.isEmpty()) item {
+                if (uiState.results.isNotEmpty() ||
+                    (uiState.otherPlatformResults.isEmpty() && !uiState.isOtherPlatformsLoading)) item {
                     val title = when {
                         uiState.query.isNotBlank() -> "Results"
                         uiState.selectedPlatform == "All" -> "Explore all platforms"
@@ -353,8 +354,10 @@ fun SearchScreen(
                 }
 
                 // Empty State (Query has no matches)
-                if (!uiState.isLoading && uiState.error == null && uiState.results.isEmpty() &&
-                    uiState.otherPlatformResults.isEmpty()) {
+                // Also waits on the cross-platform fetch: offering "Add as a custom game" while it
+                // is still in flight invites a duplicate entry for a game the catalog does have.
+                if (!uiState.isLoading && !uiState.isOtherPlatformsLoading && uiState.error == null &&
+                    uiState.results.isEmpty() && uiState.otherPlatformResults.isEmpty()) {
                     item {
                         Column(
                             modifier = Modifier
@@ -398,6 +401,17 @@ fun SearchScreen(
                         onClick = { viewModel.openDetails(game, onNavigateToDetails) },
                         onToggleWishlist = { viewModel.toggleWishlist(game) }
                     )
+                }
+
+                if (uiState.isOtherPlatformsLoading && uiState.query.isNotBlank()) {
+                    item {
+                        Text(
+                            text = "Checking other platforms…",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
                 }
 
                 if (uiState.otherPlatformResults.isNotEmpty()) {

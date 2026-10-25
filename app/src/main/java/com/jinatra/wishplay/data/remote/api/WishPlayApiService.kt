@@ -46,6 +46,16 @@ class WishPlayApiServiceImpl @Inject constructor(
     private val rawgBaseUrl = "https://api.rawg.io/api"
     private val stores = StoreCatalog(client)
 
+    /**
+     * The injected client allows 15s to read. RAWG answers a warm query in well under a second
+     * but a cold one has been measured at ~22s, which that budget would cut off. This client
+     * shares the same connection pool, dispatcher and certificate pins, and is used only for the
+     * supplementary cross-platform fetch, which holds up nothing on screen.
+     */
+    private val patientClient: OkHttpClient by lazy {
+        client.newBuilder().readTimeout(35, java.util.concurrent.TimeUnit.SECONDS).build()
+    }
+
     override suspend fun searchGames(query: String, platform: String): List<GameDto> =
         searchGamesPage(query, platform, 1).games
 
@@ -80,7 +90,12 @@ class WishPlayApiServiceImpl @Inject constructor(
         catch (cancelled: CancellationException) { throw cancelled }
         catch (e: Exception) { Result.failure(e) }
 
-    private suspend fun searchRawgPage(query: String, platform: String, page: Int): GameSearchPage = withContext(Dispatchers.IO) {
+    private suspend fun searchRawgPage(
+        query: String,
+        platform: String,
+        page: Int,
+        httpClient: OkHttpClient = client
+    ): GameSearchPage = withContext(Dispatchers.IO) {
         val q = query.trim()
         val platformFilter = mapPlatformToRawgId(platform)
 
@@ -92,7 +107,7 @@ class WishPlayApiServiceImpl @Inject constructor(
             "$rawgBaseUrl/games?key=$rawgApiKey&ordering=-added&page_size=40&page=$page$platformFilter"
         }
 
-        val json = requestJson(url)
+        val json = httpClient.catalogJson(url)
         val results = json.optJSONArray("results") ?: throw IOException("Invalid catalog response")
         GameSearchPage(
             games = (0 until results.length()).map { mapRawgGameToDto(results.getJSONObject(it)) },
@@ -104,13 +119,14 @@ class WishPlayApiServiceImpl @Inject constructor(
      * Second, independent pass for the games a platform filter excluded.
      *
      * Deliberately not folded into [searchGamesPage]: RAWG answers a warm query in well under a
-     * second but a cold one has been measured at 22s, and this result is only ever supplementary.
+     * second but a cold one has been measured at ~22s, and this result is only ever supplementary.
      * Fetching it separately means results the user can already act on are never held back, and a
-     * slow pass costs a late section rather than a late screen.
+     * slow pass costs a late section rather than a late screen. It uses [patientClient] because
+     * the shared client's 15s read timeout would cut that cold case off.
      */
     override suspend fun searchOtherPlatforms(query: String, platform: String, shown: List<GameDto>): List<GameDto> {
         if (query.trim().length < 2 || mapPlatformToRawgId(platform).isEmpty()) return emptyList()
-        val unfiltered = attempt { searchRawgPage(query, "All", 1) }.getOrNull() ?: return emptyList()
+        val unfiltered = attempt { searchRawgPage(query, "All", 1, patientClient) }.getOrNull() ?: return emptyList()
         return selectOtherPlatformGames(primary = shown, candidates = unfiltered.games, selectedPlatform = platform)
     }
 

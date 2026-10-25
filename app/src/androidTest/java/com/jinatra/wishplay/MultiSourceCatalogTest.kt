@@ -64,13 +64,28 @@ class MultiSourceCatalogTest {
         assertTrue(api.searchOtherPlatforms("Ports", "PC", page.games).isEmpty())
     }
 
-    @Test fun crossPlatformFetchIsSkippedWithoutAPlatformFilter() = runBlocking {
-        val api = WishPlayApiServiceImpl(coverageClient())
+    @Test fun crossPlatformFetchIssuesNoRequestWithoutAPlatformFilter() = runBlocking {
+        // Asserting an empty result would pass even if the request were made, since the selection
+        // rule discards everything for "All". Count the calls instead.
+        val rawgCalls = java.util.concurrent.atomic.AtomicInteger(0)
+        val api = WishPlayApiServiceImpl(coverageClient(rawgCalls = rawgCalls))
+
         assertTrue(api.searchOtherPlatforms("Ports", "All", emptyList()).isEmpty())
+        assertEquals(0, rawgCalls.get())
+
+        assertTrue(api.searchOtherPlatforms("P", "PC", emptyList()).isEmpty())
+        assertEquals(0, rawgCalls.get())
+
+        api.searchOtherPlatforms("Ports", "PC", emptyList())
+        assertEquals(1, rawgCalls.get())
     }
 
-    private fun coverageClient(unfilteredCode: Int = 200) = OkHttpClient.Builder().addInterceptor { chain ->
+    private fun coverageClient(
+        unfilteredCode: Int = 200,
+        rawgCalls: java.util.concurrent.atomic.AtomicInteger? = null
+    ) = OkHttpClient.Builder().addInterceptor { chain ->
         val request = chain.request()
+        if (request.url.host == "api.rawg.io") rawgCalls?.incrementAndGet()
         val pcGame = """{"id":1,"name":"Ports","slug":"ports","platforms":[{"platform":{"slug":"pc","name":"PC"}}]}"""
         val consoleGame = """{"id":2,"name":"Console Only","slug":"console-only","platforms":[{"platform":{"slug":"playstation5","name":"PlayStation 5"}}]}"""
         val filtered = request.url.queryParameter("platforms") != null

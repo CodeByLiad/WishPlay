@@ -27,6 +27,7 @@ data class SearchUiState(
     val selectedPlatform: String = "All",
     val results: List<Game> = emptyList(),
     val otherPlatformResults: List<Game> = emptyList(),
+    val isOtherPlatformsLoading: Boolean = false,
     val recentSearches: List<String> = emptyList(),
     val popularQueries: List<String> = emptyList(),
     val wishlistedIds: Set<String> = emptySet(),
@@ -39,7 +40,7 @@ data class SearchUiState(
     val sourceNotice: String? = null
 )
 
-private data class SearchMetadata(val hasMore: Boolean, val error: String?, val isPro: Boolean, val busyIds: Set<String>, val sourceNotice: String?)
+private data class SearchMetadata(val hasMore: Boolean, val error: String?, val isPro: Boolean, val busyIds: Set<String>, val sourceNotice: String?, val otherLoading: Boolean)
 
 @OptIn(FlowPreview::class)
 @HiltViewModel
@@ -54,6 +55,7 @@ class SearchViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     private val _results = MutableStateFlow<List<Game>>(emptyList())
     private val _otherResults = MutableStateFlow<List<Game>>(emptyList())
+    private val _otherLoading = MutableStateFlow(false)
     private val _snackbar = MutableStateFlow<String?>(null)
     private val _pageState = MutableStateFlow(Pair(false, null as String?))
     private var searchJob: Job? = null
@@ -63,8 +65,8 @@ class SearchViewModel @Inject constructor(
     private val _isPro = userPreferences.userRole
     private val _busyGames = MutableStateFlow<Set<String>>(emptySet())
     private val _sourceNotice = MutableStateFlow<String?>(null)
-    private val _metadata = combine(_pageState, _isPro, _busyGames, _sourceNotice) { page, role, busy, notice ->
-        SearchMetadata(page.first, page.second, role == "pro" || role == "admin", busy, notice)
+    private val _metadata = combine(_pageState, _isPro, _busyGames, _sourceNotice, _otherLoading) { page, role, busy, notice, otherLoading ->
+        SearchMetadata(page.first, page.second, role == "pro" || role == "admin", busy, notice, otherLoading)
     }
 
     val popularQueries = searchRepository.popularQueries
@@ -90,6 +92,7 @@ class SearchViewModel @Inject constructor(
             selectedPlatform = plat,
             results = results,
             otherPlatformResults = otherResults,
+            isOtherPlatformsLoading = metadata.otherLoading,
             recentSearches = recent,
             popularQueries = popularQueries,
             wishlistedIds = ids,
@@ -128,6 +131,7 @@ class SearchViewModel @Inject constructor(
         otherJob?.cancel()
         _results.value = emptyList()
         _otherResults.value = emptyList()
+        _otherLoading.value = false
         _pageState.value = false to null
         _isLoading.value = true
         _query.value = newQuery
@@ -225,6 +229,7 @@ class SearchViewModel @Inject constructor(
      */
     private fun loadOtherPlatforms(q: String, plat: String, shown: List<Game>, requestGeneration: Int) {
         otherJob?.cancel()
+        _otherLoading.value = true
         otherJob = viewModelScope.launch {
             val others = try {
                 searchRepository.searchOtherPlatforms(q, plat, shown)
@@ -233,18 +238,25 @@ class SearchViewModel @Inject constructor(
             } catch (_: Exception) {
                 emptyList()
             }
-            if (requestGeneration == generation) _otherResults.value = others
+            if (requestGeneration == generation) {
+                _otherResults.value = others
+                _otherLoading.value = false
+            }
         }
     }
 
     private fun performSearch(q: String, plat: String, page: Int = 1) {
-        searchJob?.cancel()
-        otherJob?.cancel()
         val requestGeneration = ++generation
+        searchJob?.cancel()
         if (page == 1) {
+            // Only a new search invalidates the section. A load-more leaves any in-flight fetch
+            // alone: cancelling it there would abort it permanently, since it is re-issued only
+            // for page 1 and nothing would tell the user the section had been dropped.
+            otherJob?.cancel()
             loadedPage = 0
             _results.value = emptyList()
             _otherResults.value = emptyList()
+            _otherLoading.value = false
             _sourceNotice.value = null
         }
         searchJob = viewModelScope.launch {

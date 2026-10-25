@@ -86,6 +86,31 @@ class PlatformCoverageTest {
     }
 
     @Test
+    fun candidatesSharingATitleCollapseToOne() {
+        val candidates = listOf(
+            game("rawg_1", "Astro Bot", "PS5"),
+            game("rawg_2", "Astro Bot", "PS5")
+        )
+
+        val result = selectOtherPlatformGames(emptyList(), candidates, "PC")
+
+        assertEquals(listOf("rawg_1"), result.map { it.id })
+    }
+
+    @Test
+    fun aSymbolOnlyPrimaryTitleIsNotAWildcard() {
+        // catalogTitleKey("!!!") is "", and so is any other symbol-only title. Without guarding
+        // that, one such row in the primary list would suppress every empty-keyed candidate.
+        val result = selectOtherPlatformGames(
+            primary = listOf(game("rawg_9", "!!!", "PC")),
+            candidates = listOf(game("rawg_1", "???", "PS5")),
+            selectedPlatform = "PC"
+        )
+
+        assertEquals(listOf("rawg_1"), result.map { it.id })
+    }
+
+    @Test
     fun allPlatformMeansNoSection() {
         val candidates = listOf(game("rawg_2", "Grand Theft Auto VI", "Xbox Series", "PS5"))
 

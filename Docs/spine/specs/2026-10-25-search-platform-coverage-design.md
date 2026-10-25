@@ -69,6 +69,14 @@ must discover reproduces that. Approach 2 makes the filter dishonest.
 
 ## Design
 
+> **Amended after review.** The data flow below describes the section being gathered inside
+> `searchGamesPage` and returned on the same page object. That is not what shipped: waiting on the
+> supplementary pass delayed results the user could already act on, and bounding that wait silently
+> dropped the section on a cold catalog query (measured: 500–650ms warm, 22,078ms cold). The
+> section is now a second, independent call — `WishPlayApiService.searchOtherPlatforms(query,
+> platform, shown)` — issued by the ViewModel after the primary results render. The UI contract,
+> `SearchUiState.otherPlatformResults`, is unchanged. See the plan's deviation note for detail.
+
 ### Data flow
 
 1. `WishPlayApiServiceImpl.searchGamesPage` gains a fourth parallel `async` beside the existing

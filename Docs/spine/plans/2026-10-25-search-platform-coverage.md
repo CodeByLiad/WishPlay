@@ -18,6 +18,23 @@
 - Unit tests run `./gradlew testReleaseUnitTest`; instrumented tests run `./gradlew connectedDebugAndroidTest` against emulator `lockout_qa`. The emulator must have no `com.jinatra.wishplay` release build installed, or the debug APK fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`.
 - `versionCode 3` / `versionName 1.1.0` stay unchanged.
 
+### Deviation: the section is fetched separately, not in the same call
+
+Tasks 2 and 3 below describe a fourth parallel pass inside `searchGamesPage`, carried out on
+`GameSearchPage.otherPlatformGames` and `SearchPageResult.otherPlatformGames`. **That is not what
+shipped.** Code review found the page waited on that pass, so a slow catalog response delayed
+results the user could already act on. Capping the wait then silently dropped the section instead:
+measured against live RAWG, a warm query answers in 500–650ms but a cold one took 22,078ms, so the
+first search of a session lost its section while the suite stayed green, because the fixture
+responds instantly.
+
+The wait was removed rather than retuned. `WishPlayApiService.searchOtherPlatforms(query, platform,
+shown)` is a separate call the ViewModel issues once the primary results are on screen, tracked by
+its own `otherJob`. Both `otherPlatformGames` fields are gone; the UI contract,
+`SearchUiState.otherPlatformResults`, is unchanged. It uses a client derived from the injected one
+with a longer read timeout, since the shared 15s budget would cut off the cold case this exists to
+serve. The user approved this deviation.
+
 ### Deviation from the spec's test plan
 
 The spec listed a Compose test asserting the section renders. The existing Compose tests
