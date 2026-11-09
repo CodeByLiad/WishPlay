@@ -23,10 +23,6 @@ class WishlistRepository(
     private val userPreferences: UserPreferences? = null,
     private val context: Context? = null
 ) {
-    companion object {
-        const val FREE_CAP = 25
-    }
-
     val wishlistGames: Flow<List<Game>> = wishlistDao.observeWishlist().map { list ->
         list.map { it.toDomainModel() }
     }
@@ -39,14 +35,10 @@ class WishlistRepository(
         it?.toDomainModel()
     }
 
-    suspend fun addGameToWishlist(gameId: String, isPro: Boolean = false): Result<Unit> {
+    suspend fun addGameToWishlist(gameId: String): Result<Unit> {
         val role = userPreferences?.userRole?.first() ?: "guest"
         val existing = wishlistDao.getWishlistItem(gameId)
         if (existing != null && existing.deletedAt == null) return Result.success(Unit)
-        val count = wishlistDao.getWishlistCount()
-        if (!isPro && role !in listOf("pro", "admin") && count >= FREE_CAP) {
-            return Result.failure(IllegalStateException("CAP_REACHED"))
-        }
 
         val maxOrder = wishlistDao.getMaxOrderIndex() ?: 0
         val status = if (role == "guest") "LOCAL" else "PENDING_INSERT"
@@ -78,6 +70,10 @@ class WishlistRepository(
         }
         alertScheduler?.cancelAlertsForGame(gameId)
         context?.let { NextDropWidgetUpdater.updateWidget(it) }
+    }
+
+    suspend fun togglePriceAlert(gameId: String, enabled: Boolean) {
+        wishlistDao.updatePriceAlert(gameId, enabled)
     }
 
     suspend fun toggleAlert(gameId: String, alertEnabled: Boolean) {
@@ -128,14 +124,9 @@ class WishlistRepository(
         platforms: List<String>,
         date: String?,
         notes: String?,
-        isPro: Boolean = false,
         platformDates: Map<String, String?>? = null
     ): Result<Game> {
         val role = userPreferences?.userRole?.first() ?: "guest"
-        val count = wishlistDao.getWishlistCount()
-        if (!isPro && role !in listOf("pro", "admin") && count >= FREE_CAP) {
-            return Result.failure(IllegalStateException("CAP_REACHED"))
-        }
 
         val customId = "c" + System.currentTimeMillis()
         val platMap = JSONObject()

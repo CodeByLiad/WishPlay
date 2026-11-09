@@ -8,7 +8,15 @@
 
 > **Never miss a game drop.** One list for every video game you are waiting for across PC, PlayStation, Xbox, Nintendo Switch, Android, and iOS.
 
-WishPlay is an offline-first native Android game wishlist and release tracking app designed with Google's Material 3 Expressive design tokens. It provides countdown reminders, date-change notifications, PC system requirements, trailer playback, cloud sync, and a one-time lifetime Pro upgrade.
+WishPlay is an offline-first native Android game wishlist and release tracking app designed with Google's Material 3 Expressive design tokens. It provides countdown reminders, date-change notifications, PC system requirements, trailer playback, cloud sync, and optional bKash donations. Every feature is free for guests and signed-in users.
+
+---
+
+## Download
+
+[Download WishPlay 1.2.0 for Android](https://github.com/CodeByLiad/WishPlay/releases/download/v1.2.0/WishPlay-1.2.0-Jinatra.apk) · [Release notes and checksum](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.2.0)
+
+Requires Android 8.0 or later. Every feature is free. Optional bKash donations: **01978900129**.
 
 ---
 
@@ -25,13 +33,11 @@ WishPlay is an offline-first native Android game wishlist and release tracking a
 - **Cloud Sync & Accounts:** Seamless Google Sign-In through Android Credential Manager. Local guest wishlists automatically merge on first sign-in.
 - **Home-Screen Widget:** Interactive Jetpack Glance widget displaying the next upcoming release and a live countdown badge.
 - **Material 3 Expressive UI:** Curated color schemes, fluid springs, custom cookie-shaped artwork containers (`C4`, `C6`, `C9`, `C12`, `SQ`), and light/dark/system theme support.
-- **Pro Entitlement & Payments:**
-  - Unlimited wishlist (bypasses 25-game free cap).
-  - PC Price-drop alerts (Steam / IsThereAnyDeal).
-  - Custom accent themes (violet, teal, coral swatches).
-  - Multi-channel payments: Paddle Billing (cards) and bKash Send Money.
-  - Promo code engine (`WP-XXXX-XXXX`) with single-transaction atomic redemption.
-- **In-App Admin Panel:** Secured with `FLAG_SECURE` (screenshot & screen recording blocked), live bKash approval queue with audit logging, and code management.
+- **Completely Free:**
+  - Unlimited wishlist and imports, with no paid game-count cap.
+  - All accent themes, widgets, cloud sync, and supported price-drop alerts are free.
+  - Optional donations through bKash number **01978900129**, with a copy-number action in Profile.
+  - No upgrade, checkout, promo-code, or admin screens in the Android app.
 - **Hardened & Optimized:** Certificate pinning with backup pins, cleartext HTTP strictly disabled, R8 full-mode minification, and in-app updater with SHA-256 + certificate matching.
 
 ---
@@ -63,7 +69,7 @@ WishPlay is an offline-first native Android game wishlist and release tracking a
 ### Build Commands
 ```bash
 # Clone the repository
-git clone https://github.com/mdliad-se/WishPlay.git
+git clone https://github.com/CodeByLiad/WishPlay.git
 cd WishPlay
 
 # Run all unit test suites
@@ -79,13 +85,13 @@ cd WishPlay
 The compiled release APK will be generated at:
 `app/build/outputs/apk/release/app-release.apk`
 
-Version 1.0.1 uses the Android application ID `com.jinatra.wishplay` and the Jinatra signing certificate in `keystore/wishplay-jinatra-release.jks`. Configure signing credentials in the untracked `local.properties`; keep the original keystore for earlier releases. The new application ID installs separately from the previous app and does not inherit its local data. Firebase is registered for the new ID and its signing certificates; `node scripts/register-android-app.cjs --apply` refreshes that registration using the existing local service account. Run `node scripts/verify-catalog.cjs` for live platform search, artwork, and pagination checks.
+Version 1.2.0 uses the Android application ID `com.jinatra.wishplay` and the Jinatra signing certificate in `keystore/wishplay-jinatra-release.jks`. Configure signing credentials in the untracked `local.properties`; keep the original keystore for earlier releases. Version 1.2.0 updates the Jinatra 1.0.1/1.1.0 releases in place. Older builds with a different application ID install separately and do not share local data. Firebase is registered for this package and its signing certificates; `node scripts/register-android-app.cjs --apply` refreshes that registration using the existing local service account. Run `node scripts/verify-catalog.cjs` for live platform search, artwork, and pagination checks.
 
 ---
 
 ## 🔒 Security & Privacy
 
-- **No Secrets in APK:** All third-party game proxy keys live in server environment variables.
+- **Catalog Access:** The client queries RAWG and supported stores directly. The RAWG client key remains bundled; moving it behind a server proxy is tracked in the release verification notes.
 - **Encrypted Storage:** Room SQLite database encrypted via SQLCipher with keys in the Android Keystore.
 - **No Third-Party Trackers:** Zero ad networks, zero privacy-invasive tracking SDKs.
 - **Backup Exclusions:** Database and token preferences explicitly excluded from cloud backups.

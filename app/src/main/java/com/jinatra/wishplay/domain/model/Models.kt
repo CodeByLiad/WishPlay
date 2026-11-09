@@ -163,35 +163,3 @@ data class SyncSummary(
     val deletedCount: Int = 0,
     val lastSyncedMillis: Long = System.currentTimeMillis()
 )
-
-data class AdminStats(
-    val activeCodes: Int = 0,
-    val redeemed: Int = 0,
-    val pendingBkashCount: Int = 0
-)
-
-data class AdminBkashItem(
-    val id: String = "",
-    val trxId: String = "",
-    val userId: String = "",
-    val amountBdt: Int = 349,
-    val senderNumber: String = "",
-    val createdAt: String? = null
-)
-
-data class AdminPromoCode(
-    val code: String = "",
-    val type: String = "lifetime", // "lifetime" or "discount"
-    val discountPct: Int = 0,
-    val maxUses: Int = 10,
-    val uses: Int = 0,
-    val expiresAt: String? = null,
-    val active: Boolean = true
-)
-
-data class AdminDashboardData(
-    val stats: AdminStats = AdminStats(),
-    val pendingBkash: List<AdminBkashItem> = emptyList(),
-    val codes: List<AdminPromoCode> = emptyList()
-)
-

@@ -1,72 +1,50 @@
-# WishPlay Release Verification & Security Hardening (Phase 7)
+# WishPlay 1.2.0 release verification
 
-**Product:** WishPlay (`com.jinatra.wishplay`)  
-**Publisher:** Jinatra  
-**Build Type:** Release (R8 full mode, resource shrinking, APK Signature Scheme v2 & v3)  
-**Artifact:** `app/build/outputs/apk/release/app-release.apk`  
-**Size:** 18,511,970 bytes (~17.7 MB — below PRD 20 MB ceiling)  
-**Version:** 1.1.0 (versionCode 3)  
-**SHA-256 Checksum:** `1966500ad8b63886a89edb395a1af7d0ca641ba7c93ccb5f8d99bb0aefa4e993`  
-**Signing Certificate SHA-256:** `BF:AC:F7:85:47:D7:04:0B:A0:4F:C6:DC:74:83:86:3B:4A:22:89:1F:6E:6C:45:47:A0:E8:41:26:85:F4:50:A8`
+Verified November 9, 2026.
 
----
+| Property | Verified value |
+| --- | --- |
+| Android package | `com.jinatra.wishplay` |
+| Version | 1.2.0 (version code 4) |
+| Minimum Android | 8.0 / API 26 |
+| APK | `WishPlay-1.2.0-Jinatra.apk` |
+| Size | 18,666,186 bytes |
+| APK SHA-256 | `8ff8d196447e8fce36d24c6274090c0f2a59e2eeed99fcf151c2de40d968c786` |
+| Signing certificate SHA-256 | `BF:AC:F7:85:47:D7:04:0B:A0:4F:C6:DC:74:83:86:3B:4A:22:89:1F:6E:6C:45:47:A0:E8:41:26:85:F4:50:A8` |
+| Signature schemes | v2 and v3 verified with Android SDK apksigner |
+| Previous release compatibility | Certificate matches the local 1.1.0 APK and the official Jinatra certificate |
+| Build | `testDebugUnitTest lintRelease assembleRelease` succeeded |
+| Unit tests | 41 passed |
+| Device regression tests | 15 selected tests passed before version/release preparation |
+| Release lint | No errors; 80 warnings |
 
-## 1. Threat Mitigation Audit (PRD Threats & Defenses Table)
+## Current product policy
 
-| Threat | PRD Defense | Implemented Defense | Status |
-| :--- | :--- | :--- | :---: |
-| **Patch APK to flip `isPro = true`** | Pro comes from server-signed token; server features check server account; re-signed APKs fail key attestation | `EntitlementRepository` checks `AppSecurityManager.isEnvironmentCompromised()`. Quiet failure locks Pro features without alerting modders. Server-side Edge Functions gate price and sync data. | **Verified** |
-| **Fake "payment successful"** | Pro only granted by verified webhook or server function | Pro entitlement is only mutated via Cloud Functions and verified server records (`payments` & `auditLog`). Client never sets Pro status directly. | **Verified** |
-| **Brute-force promo codes** | 8+ random chars, rate limits, max uses, one use per account | `WP-XXXX-XXXX` format, single-transaction redemption in `redeemCode` Cloud Function, server rate limits. | **Verified** |
-| **Reuse or fake bKash TrxID** | Unique TrxID in DB; admin review | Firestore unique TrxID constraint; admin queue in `AdminRepository` / `adminReviewBkash` Cloud Function. | **Verified** |
-| **Become admin by patching app** | Admin role in server-only table | Role verification in `admin.ts` strictly checks `hyathis.x@gmail.com` and `/admins/{uid}` on the server. | **Verified** |
-| **Steal API keys from APK** | No secret ships in APK; keys live in backend secrets | **Not met.** `WishPlayApiService.kt` hardcodes a RAWG API key and calls `https://api.rawg.io/api` directly; `StoreCatalog.kt` calls `store.steampowered.com` and `itunes.apple.com` directly. No request currently routes through a backend proxy. The key is extractable from the APK and the free-tier quota is abusable. Moving catalog calls behind a proxy is outstanding work. | **Open** |
-| **Read/change other users' data** | Row-level security on every table | Firestore security rules and service-role functions isolate user documents by UID. | **Verified** |
-| **Intercept network traffic** | HTTPS only, cleartext disabled, certificate pinning with backup pin | `network_security_config.xml` has `cleartextTrafficPermitted="false"`. `NetworkModule` configures OkHttp `CertificatePinner` with Google Trust Services R1, DigiCert G2 backup, Cloudflare ECC CA-3, and ISRG Root X1 backup. | **Verified** |
-| **Distribute malicious update APK** | In-app updater checks SHA-256 and verifies signing certificate matches installed app | `UpdateManager.downloadAndVerifyApk()` computes SHA-256 and executes `appSecurityManager.verifyApkSigningCertificateMatches()`. If certificate digest differs, file is deleted and install is aborted. | **Verified** |
-| **Database & Token leakage** | SQLCipher encryption; backup exclusions | `PassphraseManager` encrypts Room DB using AndroidKeyStore AES-GCM 256-bit key. `backup_rules.xml` & `data_extraction_rules.xml` explicitly exclude DB and sensitive prefs from cloud backup and device migration. | **Verified** |
-| **Admin panel surveillance** | Screenshot blocking on admin panel | `FLAG_SECURE` attached via `DisposableEffect` to Window during `AdminScreen` lifecycle. | **Verified** |
+All app features are free. Wishlist/import purchase limits, Pro checkout, promo-code redemption, admin screens, and privileged-account controls are removed. Donations are optional and only display/copy bKash number **01978900129**.
 
----
+The release keeps the existing package and Jinatra signing key, allowing in-place updates of the Jinatra 1.0.1/1.1.0 line. Builds using the older application ID install separately.
 
-## 2. In-App Updater Specifications
+## Updates and downloads
 
-The in-app updater operates via `UpdateManager`:
-1. **Periodic Check:** Automatically runs on app launch, throttled to once per 24 hours. Bypassed when user taps "Check for updates" in Profile.
-2. **Manifest Format:** `distribution/update_manifest.json` provides `versionCode`, `versionName`, `apkUrl`, `sha256`, `minSupportedVersionCode`, and `releaseNotes`.
-3. **Forced Updates:** If `currentVersionCode < minSupportedVersionCode`, `isUpdateForced = true` displays a non-dismissible required update sheet, blocking older versions with deprecated APIs or security vulnerabilities.
-4. **Integrity & Security:** Downloaded APK is verified against the manifest SHA-256 and cross-checked against the installed app's signing certificate before invoking the package installer.
+- [GitHub release](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.2.0)
+- [Signed APK](https://github.com/CodeByLiad/WishPlay/releases/download/v1.2.0/WishPlay-1.2.0-Jinatra.apk)
+- The APK, SHA-256 file, and update manifest are release assets; APK binaries are excluded from source control.
+- Version 1.2.0 checks `https://raw.githubusercontent.com/CodeByLiad/WishPlay/main/distribution/update_manifest.json` for future releases.
+- Already-installed older versions retain their old updater endpoint. This release does not change the separate `wishplay-release` repository; those installations can update manually using the APK above.
+- Downloads are checked against the manifest SHA-256 and the installed app's signing certificate before installation.
 
----
+## Verification limits and outstanding work
 
-## 3. Verification Commands for Release Engineers
+- Live RAWG verification returned HTTP 522. Catalog completeness and remote artwork availability cannot be guaranteed. Store fallback behavior passed fixture-based tests.
+- Successful Google sign-in/cloud sync with a real account and long-running reminder delivery under physical-device battery restrictions remain unverified.
+- Android posting of release, countdown, date-change, and price-drop notifications passed on the emulator with notification permission granted. This does not prove exact background delivery timing on every device.
+- The RAWG client API key is still bundled in the existing catalog implementation. Moving catalog access behind a server proxy remains outstanding; this release makes no claim that all provider keys are server-only.
+- Existing server deployments and historical account/payment records were not changed by the free-app/admin-UI removal.
 
-### Verify APK SHA-256 Checksum
+## Local verification commands
+
 ```powershell
-Get-FileHash app\build\outputs\apk\release\app-release.apk -Algorithm SHA256
-```
-
-### Verify Signing Certificate Scheme (v2 & v3) and Fingerprint
-```bash
-# Using Android SDK apksigner
+.\gradlew.bat --offline testDebugUnitTest lintRelease assembleRelease
 apksigner verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
-
-# Note: keytool cannot read this APK. Release builds use APK Signature Scheme v2/v3
-# only (v1 JAR signing is disabled), so keytool reports "Not a signed jar file".
-# Use apksigner above.
+Get-FileHash distribution/WishPlay-1.2.0-Jinatra.apk -Algorithm SHA256
 ```
-
----
-
-## 4. Production Release Keystore Setup
-
-To sign with the official production release keystore, provide the following properties in `~/.gradle/gradle.properties` or as environment variables:
-
-```properties
-WISHPLAY_KEYSTORE_FILE=/path/to/wishplay-release.jks
-WISHPLAY_KEYSTORE_PASSWORD=your_keystore_password
-WISHPLAY_KEY_ALIAS=wishplay
-WISHPLAY_KEY_PASSWORD=your_key_password
-```
-
-When building via Gradle (`.\gradlew.bat assembleRelease`), the configuration automatically binds the release signing configuration with APK Signature Schemes v2 and v3 enabled.

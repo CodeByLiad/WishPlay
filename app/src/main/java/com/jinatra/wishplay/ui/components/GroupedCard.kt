@@ -92,7 +92,7 @@ fun GroupedItemContainer(
     val clickModifier = if (onClick != null) {
         Modifier.clickable(
             interactionSource = interactionSource,
-            indication = null,
+            indication = androidx.compose.material3.ripple(),
             onClick = onClick
         )
     } else Modifier

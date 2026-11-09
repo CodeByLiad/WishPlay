@@ -69,7 +69,6 @@ class NextDropWidget : GlanceAppWidget() {
         val userPrefs = entryPoint?.userPreferences()
         val wishlistDao = entryPoint?.wishlistDao()
 
-        val isPro = userPrefs?.isPro?.first() ?: false
         val wishlist = wishlistDao?.getWishlistSync() ?: emptyList()
 
         val today = LocalDate.now().toString()
@@ -82,7 +81,6 @@ class NextDropWidget : GlanceAppWidget() {
             GlanceTheme {
                 WidgetContent(
                     context = context,
-                    isPro = isPro,
                     gameId = upcomingGame?.id,
                     gameTitle = upcomingGame?.title,
                     daysLeft = daysLeft
@@ -94,7 +92,6 @@ class NextDropWidget : GlanceAppWidget() {
     @androidx.compose.runtime.Composable
     private fun WidgetContent(
         context: Context,
-        isPro: Boolean,
         gameId: String?,
         gameTitle: String?,
         daysLeft: Int?
@@ -104,60 +101,7 @@ class NextDropWidget : GlanceAppWidget() {
         val mutedText = Color(0xFF4A4560)
         val cardBg = Color(0xFFFFB938) // Matches prototype var(--pc)
 
-        if (!isPro) {
-            // Pro Locked State matching prototype
-            Box(
-                modifier = GlanceModifier
-                    .fillMaxSize()
-                    .cornerRadius(24.dp)
-                    .background(Color(0xFF201C3E))
-                    .padding(14.dp)
-                    .clickable(actionStartActivity<MainActivity>()),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    modifier = GlanceModifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = GlanceModifier
-                            .size(38.dp)
-                            .cornerRadius(19.dp)
-                            .background(goldColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "PRO",
-                            style = TextStyle(
-                                color = ColorProvider(onGoldColor),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
-                            )
-                        )
-                    }
-
-                    Spacer(modifier = GlanceModifier.width(12.dp))
-
-                    Column(modifier = GlanceModifier.defaultWeight()) {
-                        Text(
-                            text = "Next drop countdown",
-                            style = TextStyle(
-                                color = ColorProvider(Color.White),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp
-                            )
-                        )
-                        Text(
-                            text = "WishPlay Pro feature · Tap to unlock",
-                            style = TextStyle(
-                                color = ColorProvider(Color(0xFFB0ACC0)),
-                                fontSize = 12.sp
-                            )
-                        )
-                    }
-                }
-            }
-        } else if (gameTitle == null || daysLeft == null) {
+        if (gameTitle == null || daysLeft == null) {
             // Empty State
             Box(
                 modifier = GlanceModifier

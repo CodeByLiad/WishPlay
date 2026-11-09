@@ -140,8 +140,8 @@ class DailyCheckWorker(
                 }
             }
 
-            // 2. Check Price Drop (Pro PC stores)
-            if (alertPriceEnabled && freshDto.price != null) {
+            // 2. Check price drops for games with price alerts enabled.
+            if (alertPriceEnabled && item.wishlistItem?.priceAlertEnabled == true && freshDto.price != null) {
                 val oldPriceJson = gameEntity.priceJson
                 if (oldPriceJson != null) {
                     val freshPrice = freshDto.price

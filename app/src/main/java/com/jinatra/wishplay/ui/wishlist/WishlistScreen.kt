@@ -8,6 +8,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -87,6 +88,7 @@ fun WishlistScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val customColors = WishPlayThemeColors
+    val context = androidx.compose.ui.platform.LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.snackbarMessage) {
@@ -119,6 +121,7 @@ fun WishlistScreen(
         WishlistGrouping.groupGames(sortedGames, uiState.selectedSort)
     }
 
+    androidx.activity.compose.BackHandler(enabled = uiState.isFabExpanded) { viewModel.closeFab() }
     Box(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -142,8 +145,16 @@ fun WishlistScreen(
                     item {
                         WishlistHeader(
                             totalCount = uiState.games.size,
-                            isPro = uiState.isPro,
-                            onShare = { /* Phase 1 Share preview */ },
+                            onShare = {
+                                val text = "My WishPlay wishlist\n\n" + uiState.games.joinToString("\n") {
+                                    "${it.title} · ${it.releaseDate ?: "Date TBA"}"
+                                }
+                                context.startActivity(android.content.Intent.createChooser(
+                                    android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(android.content.Intent.EXTRA_TEXT, text)
+                                    }, "Share wishlist"))
+                            },
                             onProfile = onNavigateToProfile
                         )
                     }
@@ -164,7 +175,7 @@ fun WishlistScreen(
                     item {
                         Row(modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            (listOf("All", "Android", "PC", "PS5") + uiState.games.flatMap { it.platforms.keys }.distinct())
+                            (listOf("All") + uiState.games.flatMap { it.platforms.keys }.distinct())
                                 .distinct().forEach { platform ->
                                     ExpressiveChip(selected = uiState.selectedPlatform == platform,
                                         onClick = { viewModel.setPlatform(platform) }, label = platform)
@@ -218,7 +229,7 @@ fun WishlistScreen(
                             EmptyFilterView(
                                 filter = uiState.selectedFilter,
                                 totalCount = uiState.games.size,
-                                onShowAll = { viewModel.setFilter(FilterOption.ALL) }
+                                onShowAll = { viewModel.setFilter(FilterOption.ALL); viewModel.setPlatform("All") }
                             )
                         }
                     } else {
@@ -266,47 +277,7 @@ fun WishlistScreen(
                         }
                     }
 
-                    // Free list cap row
-                    if (!uiState.isPro) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 16.dp)
-                                    .clip(RoundedCornerShape(24.dp))
-                                    .border(
-                                        BorderStroke(1.5.dp, customColors.outlineVariant),
-                                        RoundedCornerShape(24.dp)
-                                    )
-                                    .clickable { /* Opens Pro Sheet */ }
-                                    .padding(16.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(
-                                            text = "${uiState.games.size} of 25 games",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Text(
-                                            text = "Free lists hold up to 25. Go unlimited with Pro.",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
+
                 }
             }
         }
@@ -326,10 +297,10 @@ fun WishlistScreen(
         }
 
         // Expandable FAB & Menu
-        Box(
+        if (uiState.games.isNotEmpty()) Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 100.dp)
+                .padding(end = 16.dp, bottom = 16.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.End,
@@ -412,7 +383,6 @@ fun WishlistScreen(
 @Composable
 private fun WishlistHeader(
     totalCount: Int,
-    isPro: Boolean,
     onShare: () -> Unit,
     onProfile: () -> Unit
 ) {
@@ -425,15 +395,15 @@ private fun WishlistHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = stringResource(R.string.my_wishlist),
-                style = MaterialTheme.typography.displayLarge,
+                style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = if (totalCount == 1) "1 game you're waiting on" else "$totalCount games you're waiting on",
+                text = if (totalCount == 1) "1 saved game" else "$totalCount saved games",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -455,13 +425,13 @@ private fun WishlistHeader(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CookieShape(CookieShapeType.C9))
-                    .background(if (isPro) customColors.accent else MaterialTheme.colorScheme.secondaryContainer)
-                    .clickable(onClick = onProfile),
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .clickable(onClickLabel = "Open profile", onClick = onProfile),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "G",
-                    color = if (isPro) customColors.onAccent else MaterialTheme.colorScheme.onSecondaryContainer,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp
                 )
@@ -540,6 +510,7 @@ private fun FirstRunEmptyWishlist(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
@@ -551,7 +522,7 @@ private fun FirstRunEmptyWishlist(
             Column {
                 Text(
                     text = stringResource(R.string.my_wishlist),
-                    style = MaterialTheme.typography.displayLarge,
+                    style = MaterialTheme.typography.headlineLarge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
@@ -565,7 +536,7 @@ private fun FirstRunEmptyWishlist(
                     .size(48.dp)
                     .clip(CookieShape(CookieShapeType.C9))
                     .background(MaterialTheme.colorScheme.secondaryContainer)
-                    .clickable(onClick = onProfile),
+                    .clickable(onClickLabel = "Open profile", onClick = onProfile),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -667,14 +638,14 @@ private fun EmptyFilterView(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "You have $totalCount games on your list, but none of them are ${filter.label.lowercase()}.",
+                text = "No games match these platform and release filters. Reset them to see your $totalCount saved games.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             ExpressiveButton(
                 onClick = onShowAll,
                 style = ButtonStyle.TONAL,
-                text = "Show all $totalCount"
+                text = "Reset filters"
             )
         }
     }

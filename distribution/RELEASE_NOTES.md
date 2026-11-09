@@ -1,10 +1,25 @@
-# WishPlay 1.1.0 — Jinatra
+# WishPlay 1.2.0
 
-- Search includes Steam and App Store games alongside RAWG for relevant platform queries. Source failures leave other providers usable and show a notice. Store editions keep separate identifiers; exact title/platform matches already present in RAWG are suppressed in the first search page.
-- Game details cross-check RAWG's linked Steam and App Store listings. Linked store dates apply only to that store's platform; other port dates stay independent. Source links and conflicting dates remain visible. Store data uses the US storefront, so dates can differ in other regions. Android and PlayStation dates continue to come from RAWG.
-- Save the platforms you want to track on each wishlisted game's details page. Reminders, upcoming releases, calendar entries and the home widget use those choices. Platform preferences also sync with your account and are included in backups.
-- Profile → Wishlist backups exports games, notes, release sources and reminder choices to a JSON file using Android's document picker. Import shows a preview, keeps existing wishlist entries, and checks the free wishlist limit before a single transactional merge. It never replaces or clears the list. Backup files exclude account credentials.
-- Database version 4 migrates to version 5 without deleting existing games, wishlist entries or alert settings. The package and Jinatra signing certificate are unchanged from 1.0.1, so this APK updates that release in place.
-- Platform selection controls expose their selected state to accessibility services and have 48 dp touch targets.
+WishPlay is now completely free. All features are available to guests and signed-in users without upgrading or donating.
 
-Catalog coverage is limited by provider availability. A linked store release refers to its store edition, which can differ from other PC or iOS releases.
+## Changes
+
+- Removed the 25-game wishlist/import limit and unlocked all accent themes, the home widget, and supported price-drop alerts.
+- Added optional bKash donations in Profile: **01978900129**, with a copy-number button. Donations do not unlock extra features.
+- Removed Pro upgrades, checkout, promo-code redemption, admin screens, admin navigation, and privileged-account controls from the Android app.
+- Improved navigation, preserved tab positions, made empty filters recoverable, and connected wishlist sharing to actual saved games.
+- Added calendar date selection, inline date validation, a persistent Save action, draft-discard confirmation, and direct navigation to saved custom games.
+- Added removal confirmation and protection against repeated wishlist/alert updates.
+- The release calendar now opens the current month and includes a This month shortcut.
+- Connected onboarding to the real Google sign-in flow with loading and error feedback.
+- Connected per-game price-alert settings to storage and background checks.
+- Future in-app update checks use this repository's distribution manifest.
+
+## Verification and known limits
+
+- Package: `com.jinatra.wishplay`; version code: **4**. Signed with the existing Jinatra release certificate for compatibility with previous Jinatra APKs.
+- 41 unit tests and 15 selected emulator tests passed before release preparation. Tests cover backup/import beyond the former cap, migration, catalog fallbacks with fixture data, free themes, donation copying, date selection, platform preferences, and posting all four notification types to Android.
+- Live catalog verification returned HTTP 522 from RAWG. Catalog completeness and remote artwork availability are not guaranteed; custom games remain available.
+- Successful Google sign-in/cloud sync with a real account and long-running reminder delivery under physical-device battery restrictions remain unverified.
+
+The SHA-256 checksum and update manifest are attached alongside the APK.

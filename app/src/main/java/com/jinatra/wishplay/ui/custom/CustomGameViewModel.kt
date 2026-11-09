@@ -93,6 +93,7 @@ class CustomGameViewModel @Inject constructor(
     }
 
     fun togglePlatform(platform: String) {
+        _error.value = null
         _platforms.update { current ->
             val set = current.toMutableSet()
             if (set.contains(platform)) set.remove(platform) else set.add(platform)
@@ -101,6 +102,7 @@ class CustomGameViewModel @Inject constructor(
     }
 
     fun onDateChange(newDate: String) {
+        _error.value = null
         _date.value = newDate
         _isTba.value = false
     }
@@ -127,6 +129,7 @@ class CustomGameViewModel @Inject constructor(
     fun setSeparateDates(enabled: Boolean) { _separateDates.value = enabled }
 
     fun setPlatformDate(platform: String, date: String) {
+        _error.value = null
         _platformDates.update { it + (platform to date) }
     }
 
@@ -167,7 +170,7 @@ class CustomGameViewModel @Inject constructor(
                 _isSaved.value = true
                 onSuccess(game.id)
             }.onFailure { ex ->
-                _error.value = if (ex.message == "CAP_REACHED") "Wishlist full. Upgrade to Pro for unlimited games." else "Couldn't save the game. Try again."
+                _error.value = "Couldn't save the game. Try again."
             }
             } catch (cancelled: CancellationException) {
                 throw cancelled

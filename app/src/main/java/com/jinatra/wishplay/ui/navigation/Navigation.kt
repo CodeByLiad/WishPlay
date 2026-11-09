@@ -5,7 +5,6 @@ sealed class Screen(val route: String) {
     object Main : Screen("main")
     object CustomGame : Screen("custom_game")
     object Calendar : Screen("calendar")
-    object Admin : Screen("admin")
     data class Details(val gameId: String) : Screen("details/{gameId}") {
         companion object {
             fun createRoute(gameId: String) = "details/$gameId"

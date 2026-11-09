@@ -39,6 +39,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -64,8 +67,9 @@ fun CalendarScreen(
     onBack: () -> Unit,
     onNavigateToDetails: (String) -> Unit
 ) {
-    var currentYearMonth by remember { mutableStateOf(YearMonth.of(2026, 10)) }
-    var selectedDay by remember { mutableStateOf<Int?>(null) }
+    var monthValue by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
+    val currentYearMonth = YearMonth.parse(monthValue)
+    var selectedDay by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<Int?>(null) }
     val scrollState = rememberScrollState()
 
     val daysInMonth = currentYearMonth.lengthOfMonth()
@@ -153,7 +157,7 @@ fun CalendarScreen(
             ) {
                 IconButton(
                     onClick = {
-                        currentYearMonth = currentYearMonth.minusMonths(1)
+                        monthValue = currentYearMonth.minusMonths(1).toString()
                         selectedDay = null
                     }
                 ) {
@@ -173,7 +177,7 @@ fun CalendarScreen(
 
                 IconButton(
                     onClick = {
-                        currentYearMonth = currentYearMonth.plusMonths(1)
+                        monthValue = currentYearMonth.plusMonths(1).toString()
                         selectedDay = null
                     }
                 ) {
@@ -184,6 +188,9 @@ fun CalendarScreen(
                     )
                 }
             }
+
+            TextButton(onClick = { monthValue = YearMonth.now().toString(); selectedDay = null },
+                modifier = Modifier.padding(horizontal = 12.dp)) { Text("This month") }
 
             // Day of Week Header: M T W T F S S
             Row(
@@ -229,7 +236,7 @@ fun CalendarScreen(
 
                                 Box(
                                     modifier = Modifier
-                                        .size(width = 44.dp, height = 46.dp)
+                                        .weight(1f).height(48.dp)
                                         .clip(RoundedCornerShape(12.dp))
                                         .background(
                                             when {
@@ -238,7 +245,11 @@ fun CalendarScreen(
                                                 else -> Color.Transparent
                                             }
                                         )
-                                        .clickable(enabled = hasReleases) {
+                                        .semantics {
+                                            contentDescription = "${currentYearMonth.atDay(dayNum)}: ${monthReleases[dayNum]?.size ?: 0} releases"
+                                            selected = isSelected
+                                        }
+                                        .clickable {
                                             selectedDay = if (isSelected) null else dayNum
                                         },
                                     contentAlignment = Alignment.Center
@@ -254,7 +265,7 @@ fun CalendarScreen(
                                             color = when {
                                                 isSelected -> MaterialTheme.colorScheme.primary
                                                 hasReleases -> MaterialTheme.colorScheme.onSurface
-                                                else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                                else -> MaterialTheme.colorScheme.onSurfaceVariant
                                             }
                                         )
 
@@ -271,7 +282,7 @@ fun CalendarScreen(
                                     }
                                 }
                             } else {
-                                Box(modifier = Modifier.size(width = 44.dp, height = 46.dp))
+                                Box(modifier = Modifier.weight(1f).height(48.dp))
                             }
                         }
                     }
@@ -340,7 +351,7 @@ fun CalendarScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Swipe to another month, or add more games to your list.",
+                            text = "Use the arrows to browse months, or add more games to your list.",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
@@ -348,7 +359,7 @@ fun CalendarScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         ExpressiveButton(
                             onClick = {
-                                currentYearMonth = currentYearMonth.plusMonths(1)
+                                monthValue = currentYearMonth.plusMonths(1).toString()
                                 selectedDay = null
                             },
                             text = "Next month",

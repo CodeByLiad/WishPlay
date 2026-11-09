@@ -51,6 +51,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -95,6 +96,7 @@ fun GameDetailsScreen(
         }
     }
 
+    var showRemove by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     val game = uiState.game
     if (game == null) {
         Column(modifier = Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -108,6 +110,17 @@ fun GameDetailsScreen(
         return
     }
 
+    if (showRemove) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showRemove = false },
+            title = { Text("Remove from wishlist?") },
+            text = { Text("${game.title} will leave your wishlist and its release reminders will stop.") },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = {
+                showRemove = false; viewModel.toggleWishlist()
+            }) { Text("Remove") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { showRemove = false }) { Text("Keep game") } }
+        )
+    }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.surface,
@@ -129,7 +142,7 @@ fun GameDetailsScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(280.dp)
+                    .height(if (game.coverUrl.isNullOrBlank()) 112.dp else 240.dp)
                     .background(gameColor)
             ) {
                 if (!game.coverUrl.isNullOrBlank()) {
@@ -157,9 +170,8 @@ fun GameDetailsScreen(
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier
-                        .statusBarsPadding()
-                        .padding(start = 16.dp, top = 8.dp)
-                        .size(44.dp)
+                                                .padding(start = 16.dp, top = 8.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(Color(0x8C16132E))
                 ) {
@@ -265,21 +277,23 @@ fun GameDetailsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 ExpressiveButton(
-                    onClick = viewModel::toggleWishlist,
+                    onClick = { if (game.inWishlist) showRemove = true else viewModel.toggleWishlist() },
+                    enabled = !uiState.isUpdating,
                     modifier = Modifier.weight(1f),
                     style = if (game.inWishlist) ButtonStyle.TONAL else ButtonStyle.GOLD,
                     leadingIcon = {
                         Icon(
-                            imageVector = if (game.inWishlist) Icons.Default.Check else Icons.Default.Add,
+                            imageVector = if (game.inWishlist) Icons.Default.Delete else Icons.Default.Add,
                             contentDescription = null
                         )
                     },
-                    text = if (game.inWishlist) "On your list" else "Add to wishlist"
+                    text = if (uiState.isUpdating) "Updating…" else if (game.inWishlist) "Remove from list" else "Add to wishlist"
                 )
 
                 if (game.inWishlist) {
                     IconButton(
                         onClick = viewModel::toggleAlert,
+                        enabled = !uiState.isUpdating,
                         modifier = Modifier
                             .size(48.dp)
                             .clip(RoundedCornerShape(24.dp))
@@ -287,7 +301,7 @@ fun GameDetailsScreen(
                     ) {
                         Icon(
                             imageVector = if (game.alertEnabled) Icons.Default.Notifications else Icons.Default.NotificationsOff,
-                            contentDescription = "Toggle alert",
+                            contentDescription = if (game.alertEnabled) "Turn release alerts off" else "Turn release alerts on",
                             tint = if (game.alertEnabled) customColors.onAccent else MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -901,31 +915,7 @@ fun GameDetailsScreen(
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(customColors.accent)
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Lock,
-                                        contentDescription = null,
-                                        tint = customColors.onAccent,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = "PRO",
-                                        fontFamily = BodyFontFamily,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 11.sp,
-                                        color = customColors.onAccent
-                                    )
-                                }
-                            }
+
                         }
 
                         Box(
@@ -978,7 +968,7 @@ fun GameDetailsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Alert me when the price drops",
+                                        text = if (game.inWishlist) "Alert me when the price drops" else "Add to wishlist to enable price alerts",
                                         fontFamily = BodyFontFamily,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 14.sp,
@@ -987,7 +977,8 @@ fun GameDetailsScreen(
                                     ExpressiveButton(
                                         onClick = viewModel::togglePriceAlert,
                                         style = ButtonStyle.GOLD,
-                                        text = "Get Pro"
+                                        enabled = !uiState.isUpdating && game.inWishlist,
+                                        text = if (game.priceAlertEnabled) "Turn off" else "Turn on"
                                     )
                                 }
                             }
@@ -1002,7 +993,8 @@ fun GameDetailsScreen(
             Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                 if (game.inWishlist) {
                     ExpressiveButton(
-                        onClick = viewModel::toggleWishlist,
+                        onClick = { if (game.inWishlist) showRemove = true else viewModel.toggleWishlist() },
+                    enabled = !uiState.isUpdating,
                         modifier = Modifier.fillMaxWidth(),
                         style = ButtonStyle.DANGER,
                         leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
@@ -1010,7 +1002,8 @@ fun GameDetailsScreen(
                     )
                 } else {
                     ExpressiveButton(
-                        onClick = viewModel::toggleWishlist,
+                        onClick = { if (game.inWishlist) showRemove = true else viewModel.toggleWishlist() },
+                    enabled = !uiState.isUpdating,
                         modifier = Modifier.fillMaxWidth(),
                         style = ButtonStyle.GOLD,
                         leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) },

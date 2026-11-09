@@ -1,5 +1,7 @@
 package com.jinatra.wishplay.ui.profile
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -50,7 +52,7 @@ fun DeleteAccountSheet(
     onConfirmDelete: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var confirmText by remember { mutableStateOf("") }
+    var confirmText by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
     val isValid = confirmText.trim().equals("DELETE", ignoreCase = false)
     val customColors = WishPlayThemeColors
 
@@ -72,6 +74,7 @@ fun DeleteAccountSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 36.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -86,7 +89,7 @@ fun DeleteAccountSheet(
             )
 
             Text(
-                text = "This removes your wishlist, your Pro record and your profile from our servers. It cannot be undone, and buying Pro again would be a new purchase.",
+                text = "This removes your wishlist and profile from our servers. It cannot be undone.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

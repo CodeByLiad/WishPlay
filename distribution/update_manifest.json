@@ -1,9 +1,9 @@
 {
-  "versionCode": 3,
-  "versionName": "1.1.0",
-  "apkUrl": "https://github.com/CodeByLiad/wishplay-release/releases/download/v1.1.0/WishPlay-1.1.0-Jinatra.apk",
-  "sha256": "1966500ad8b63886a89edb395a1af7d0ca641ba7c93ccb5f8d99bb0aefa4e993",
+  "versionCode": 4,
+  "versionName": "1.2.0",
+  "apkUrl": "https://github.com/CodeByLiad/WishPlay/releases/download/v1.2.0/WishPlay-1.2.0-Jinatra.apk",
+  "sha256": "8ff8d196447e8fce36d24c6274090c0f2a59e2eeed99fcf151c2de40d968c786",
   "minSupportedVersionCode": 1,
-  "releaseNotes": "Steam and App Store results alongside RAWG, per-platform tracking choices on each wishlisted game, JSON wishlist backup and import from Profile, and a database migration that preserves your existing games, wishlist and alerts.",
-  "publishedAt": "2026-10-25T00:00:00Z"
+  "releaseNotes": "WishPlay is completely free: no wishlist/import cap, all themes and widgets unlocked, optional bKash donations, and no Pro or admin screens. Improved navigation, custom-game dates, sharing, and alert controls.",
+  "publishedAt": "2026-11-09T09:21:47Z"
 }

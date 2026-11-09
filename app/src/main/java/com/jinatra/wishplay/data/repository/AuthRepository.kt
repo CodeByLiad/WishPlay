@@ -58,13 +58,8 @@ class AuthRepository @Inject constructor(
         val name = args[2] as String?
         val avatar = args[3] as String?
         val rawRole = (args[4] as? String) ?: "guest"
-        val isPro = (args[5] as? Boolean) ?: false
-
         val effectiveEmail = firebaseAuth.currentUser?.email ?: email ?: ""
-        val isAdmin = effectiveEmail.equals("hyathis.x@gmail.com", ignoreCase = true) ||
-            effectiveEmail.equals("mdliad.se@gmail.com", ignoreCase = true) ||
-            rawRole == "admin"
-        val role = if (isAdmin) "admin" else rawRole
+        val role = if (rawRole == "guest") "guest" else "free"
 
         if (role == "guest" || (id.isNullOrBlank() && firebaseAuth.currentUser == null)) {
             AuthUser(
@@ -82,7 +77,7 @@ class AuthRepository @Inject constructor(
                 name = name ?: firebaseAuth.currentUser?.displayName ?: "You",
                 avatarUrl = avatar ?: firebaseAuth.currentUser?.photoUrl?.toString(),
                 role = role,
-                isPro = isPro || role == "pro" || isAdmin
+                isPro = false
             )
         }
     }
@@ -140,11 +135,8 @@ class AuthRepository @Inject constructor(
                 }
 
                 val email = fbUser.email ?: ""
-                val isAdmin = email.equals("hyathis.x@gmail.com", ignoreCase = true) ||
-                    email.equals("mdliad.se@gmail.com", ignoreCase = true) ||
-                    withContext(Dispatchers.IO) { checkIsAdminFromFirestore(fbUser.uid) }
-                val isPro = isAdmin || withContext(Dispatchers.IO) { fetchIsProFromFirestore(fbUser.uid) }
-                val role = if (isAdmin) "admin" else if (isPro) "pro" else "free"
+                val isPro = false
+                val role = "free"
 
                 // 6. Save to local prefs
                 userPreferences.setUserData(
@@ -232,31 +224,6 @@ class AuthRepository @Inject constructor(
             .document(user.uid)
             .set(profileData, com.google.firebase.firestore.SetOptions.merge())
             .await()
-    }
-
-    private suspend fun fetchIsProFromFirestore(uid: String): Boolean {
-        return try {
-            val doc = firestore.collection("users")
-                .document(uid)
-                .collection("entitlements")
-                .document("pro")
-                .get()
-                .await()
-            val revokedAt = doc.getTimestamp("revokedAt")
-            doc.exists() && revokedAt == null
-        } catch (_: Exception) {
-            // If Firestore is unreachable, fall back to cached value
-            userPreferences.isPro.first()
-        }
-    }
-
-    private suspend fun checkIsAdminFromFirestore(uid: String): Boolean {
-        return try {
-            val doc = firestore.collection("admins").document(uid).get().await()
-            doc.exists()
-        } catch (_: Exception) {
-            false
-        }
     }
 
     private suspend fun deleteFirestoreUserData(uid: String) {

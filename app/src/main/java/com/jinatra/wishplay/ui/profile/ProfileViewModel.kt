@@ -11,8 +11,6 @@ import com.jinatra.wishplay.data.remote.update.UpdateManager
 import com.jinatra.wishplay.data.remote.update.UpdateManifest
 import com.jinatra.wishplay.data.remote.update.UpdateStatus
 import com.jinatra.wishplay.data.repository.AuthRepository
-import com.jinatra.wishplay.data.repository.BkashConfig
-import com.jinatra.wishplay.data.repository.EntitlementRepository
 import com.jinatra.wishplay.data.repository.SyncRepository
 import com.jinatra.wishplay.data.repository.WishlistRepository
 import com.jinatra.wishplay.domain.model.AuthUser
@@ -45,20 +43,16 @@ data class ProfileUiState(
     val syncState: SyncState = SyncState.IDLE,
     val snackMessage: String? = null,
     val nextDropGame: Game? = null,
+    val wishlistGames: List<Game> = emptyList(),
     val isDeleteSheetOpen: Boolean = false,
     val isSignInSheetOpen: Boolean = false,
-    val isRedeemSheetOpen: Boolean = false,
     val isPrivacySheetOpen: Boolean = false,
     val isBatterySheetOpen: Boolean = false,
     val isPrimingSheetOpen: Boolean = false,
-    val isProSheetOpen: Boolean = false,
     val isUpdateSheetOpen: Boolean = false,
     val updateStatus: UpdateStatus = UpdateStatus.Idle,
     val updateManifest: UpdateManifest? = null,
     val isUpdateForced: Boolean = false,
-    val bkashConfig: BkashConfig = BkashConfig(),
-    val isBkashSubmitting: Boolean = false,
-    val paddleCheckoutUrl: String = ""
 )
 
 data class BackupUiState(val busy: Boolean = false, val preview: BackupPreview? = null)
@@ -69,7 +63,6 @@ class ProfileViewModel @Inject constructor(
     private val syncRepository: SyncRepository,
     private val wishlistRepository: WishlistRepository,
     private val userPreferences: UserPreferences,
-    private val entitlementRepository: EntitlementRepository,
     private val updateManager: UpdateManager,
     private val backupRepository: BackupRepository,
     @ApplicationContext private val context: Context
@@ -127,20 +120,15 @@ class ProfileViewModel @Inject constructor(
     private val _snackMessage = MutableStateFlow<String?>(null)
     private val _isDeleteSheetOpen = MutableStateFlow(false)
     private val _isSignInSheetOpen = MutableStateFlow(false)
-    private val _isRedeemSheetOpen = MutableStateFlow(false)
     private val _isPrivacySheetOpen = MutableStateFlow(false)
     private val _isBatterySheetOpen = MutableStateFlow(false)
     private val _isPrimingSheetOpen = MutableStateFlow(false)
-    private val _isProSheetOpen = MutableStateFlow(false)
     private val _isUpdateSheetOpen = MutableStateFlow(false)
     private val _updateStatus = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
     private val _updateManifest = MutableStateFlow<UpdateManifest?>(null)
     private val _isUpdateForced = MutableStateFlow(false)
     private var downloadedApkFile: File? = null
 
-    private val _bkashConfig = MutableStateFlow(BkashConfig())
-    private val _isBkashSubmitting = MutableStateFlow(false)
-    private val _paddleCheckoutUrl = MutableStateFlow("")
 
     val uiState: StateFlow<ProfileUiState> = combine(
         authRepository.currentUser,
@@ -154,11 +142,9 @@ class ProfileViewModel @Inject constructor(
         combine(
             _isDeleteSheetOpen,
             _isSignInSheetOpen,
-            _isRedeemSheetOpen,
             _isPrivacySheetOpen,
             _isBatterySheetOpen,
-            _isPrimingSheetOpen,
-            _isProSheetOpen
+            _isPrimingSheetOpen
         ) { sheets -> sheets },
         combine(
             _isUpdateSheetOpen,
@@ -168,11 +154,7 @@ class ProfileViewModel @Inject constructor(
         ) { isSheetOpen, status, manifest, isForced ->
             UpdateGroup(isSheetOpen, status, manifest, isForced)
         },
-        combine(
-            _bkashConfig,
-            _isBkashSubmitting,
-            _paddleCheckoutUrl
-        ) { config, submitting, url -> Triple(config, submitting, url) }
+
     ) { args ->
         val user = args[0] as AuthUser
         val theme = args[1] as String
@@ -186,7 +168,7 @@ class ProfileViewModel @Inject constructor(
         val sheets = args[8] as Array<*>
         val update = args[9] as UpdateGroup
         @Suppress("UNCHECKED_CAST")
-        val payment = args[10] as Triple<BkashConfig, Boolean, String>
+
 
         val nextDrop = games
             .filter { it.status() == ReleaseStatus.UPCOMING }
@@ -201,20 +183,16 @@ class ProfileViewModel @Inject constructor(
             syncState = syncState,
             snackMessage = snack,
             nextDropGame = nextDrop,
+            wishlistGames = games,
             isDeleteSheetOpen = sheets[0] as Boolean,
             isSignInSheetOpen = sheets[1] as Boolean,
-            isRedeemSheetOpen = sheets[2] as Boolean,
-            isPrivacySheetOpen = sheets[3] as Boolean,
-            isBatterySheetOpen = sheets[4] as Boolean,
-            isPrimingSheetOpen = sheets[5] as Boolean,
-            isProSheetOpen = sheets[6] as Boolean,
+            isPrivacySheetOpen = sheets[2] as Boolean,
+            isBatterySheetOpen = sheets[3] as Boolean,
+            isPrimingSheetOpen = sheets[4] as Boolean,
             isUpdateSheetOpen = update.isSheetOpen,
             updateStatus = update.status,
             updateManifest = update.manifest,
             isUpdateForced = update.isForced,
-            bkashConfig = payment.first,
-            isBkashSubmitting = payment.second,
-            paddleCheckoutUrl = payment.third
         )
     }.stateIn(
         scope = viewModelScope,
@@ -250,7 +228,6 @@ class ProfileViewModel @Inject constructor(
             result.onSuccess {
                 _snackMessage.value = "Signed in. Your list is syncing now."
                 SyncWorker.schedulePeriodicSync(context)
-                entitlementRepository.refreshEntitlement()
             }.onFailure {
                 _snackMessage.value = if (it.message == "Sign-in cancelled") null
                 else "Sign-in failed: ${it.message}"
@@ -290,46 +267,6 @@ class ProfileViewModel @Inject constructor(
                 _snackMessage.value = "Synced just now (${summary.pushedCount} pushed, ${summary.pulledCount} pulled)."
             }.onFailure {
                 _snackMessage.value = "Sync failed. Will retry automatically."
-            }
-        }
-    }
-
-    /** Server-side code redemption. */
-    fun redeemCode(code: String): Boolean {
-        viewModelScope.launch {
-            val result = entitlementRepository.redeemCode(code)
-            _snackMessage.value = result.message
-            if (result.pro_granted) {
-                _isRedeemSheetOpen.value = false
-            }
-        }
-        return code.trim().uppercase().let { it == "WP-GIFT-7K2Q" || it == "WP-EID20" }
-    }
-
-    // ──────────────────────────── Pro Payment Sheet ─────────────────────────
-
-    fun openProSheet() {
-        viewModelScope.launch {
-            _isProSheetOpen.value = true
-            val bkashResult = entitlementRepository.getBkashConfig()
-            _bkashConfig.value = bkashResult
-
-            val checkoutUrl = entitlementRepository.getPaddleCheckoutUrl()
-            _paddleCheckoutUrl.value = checkoutUrl
-        }
-    }
-
-    fun closeProSheet() { _isProSheetOpen.value = false }
-
-    fun submitBkash(trxId: String, senderNumber: String) {
-        viewModelScope.launch {
-            _isBkashSubmitting.value = true
-            val config = _bkashConfig.value
-            val result = entitlementRepository.submitBkash(trxId, senderNumber, config.amount_bdt)
-            _isBkashSubmitting.value = false
-            _snackMessage.value = result.message
-            if (result.success) {
-                _isProSheetOpen.value = false
             }
         }
     }
@@ -415,8 +352,6 @@ class ProfileViewModel @Inject constructor(
     fun openSignInSheet() { _isSignInSheetOpen.value = true }
     fun closeSignInSheet() { _isSignInSheetOpen.value = false }
 
-    fun openRedeemSheet() { _isRedeemSheetOpen.value = true }
-    fun closeRedeemSheet() { _isRedeemSheetOpen.value = false }
 
     fun openPrivacySheet() { _isPrivacySheetOpen.value = true }
     fun closePrivacySheet() { _isPrivacySheetOpen.value = false }

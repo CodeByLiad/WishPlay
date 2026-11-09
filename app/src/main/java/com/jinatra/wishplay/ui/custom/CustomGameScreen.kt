@@ -39,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +64,20 @@ fun CustomGameScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val customColors = WishPlayThemeColors
+    var showDiscard by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val requestBack = {
+        if (uiState.title.isNotBlank() || uiState.notes.isNotBlank()) showDiscard = true else onBack()
+    }
+    androidx.activity.compose.BackHandler { if (!uiState.isSaving) requestBack() }
+    if (showDiscard) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDiscard = false },
+            title = { Text("Discard this game?") },
+            text = { Text("Your unsaved game details will be lost.") },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = onBack) { Text("Discard") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { showDiscard = false }) { Text("Keep editing") } }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -74,7 +89,7 @@ fun CustomGameScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = requestBack, enabled = !uiState.isSaving) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
@@ -85,6 +100,17 @@ fun CustomGameScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             )
+        },
+        bottomBar = {
+            Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                uiState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall) }
+                ExpressiveButton(onClick = { viewModel.saveCustomGame(onGameSaved) },
+                    modifier = Modifier.fillMaxWidth(), style = ButtonStyle.GOLD,
+                    enabled = !uiState.isSaving,
+                    text = if (uiState.isSaving) "Saving…" else stringResource(R.string.save_to_wishlist))
+            }
         },
         containerColor = MaterialTheme.colorScheme.surface
     ) { paddingValues ->
@@ -116,6 +142,7 @@ fun CustomGameScreen(
                     onValueChange = viewModel::onTitleChange,
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text(stringResource(R.string.game_name_hint)) },
+                    singleLine = true,
                     isError = uiState.titleError,
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -164,37 +191,19 @@ fun CustomGameScreen(
             if (uiState.separateDates) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     uiState.selectedPlatforms.forEach { platform ->
-                        OutlinedTextField(
+                        com.jinatra.wishplay.ui.components.ReleaseDateField(
                             value = uiState.platformDates[platform] ?: "",
                             onValueChange = { viewModel.setPlatformDate(platform, it) },
-                            label = { Text("$platform release date") },
-                            placeholder = { Text("YYYY-MM-DD") },
-                            supportingText = { Text("Leave empty for TBA") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp)
+                            label = "$platform release date"
                         )
                     }
                 }
             } else {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = stringResource(R.string.release_date),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                OutlinedTextField(
+                com.jinatra.wishplay.ui.components.ReleaseDateField(
                     value = uiState.releaseDate ?: "",
                     onValueChange = viewModel::onDateChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isTba,
-                    placeholder = { Text("YYYY-MM-DD") },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = MaterialTheme.colorScheme.primary,
-                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                    )
+                    enabled = !uiState.isTba
                 )
 
                 // Quick preset chips
@@ -273,10 +282,10 @@ fun CustomGameScreen(
                         "${uiState.title} releases on ${uiState.releaseDate}"
                     }
                 } else {
-                    "${uiState.title} is coming up"
+                    "${uiState.title}: release date to be announced"
                 }
             } else {
-                "Your game releases today"
+                "Add a game to preview its release reminder"
             }
 
             Box(
@@ -310,7 +319,8 @@ fun CustomGameScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "This is the alert you'll get. We'll also remind you ${uiState.reminderLead} before.",
+                            text = if (uiState.isTba && !uiState.separateDates) "Release reminders become available when you add a date."
+                                else "With alerts enabled, we'll remind you ${uiState.reminderLead} before and on release day.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -318,17 +328,6 @@ fun CustomGameScreen(
                 }
             }
 
-            // Save Button
-            ExpressiveButton(
-                onClick = { viewModel.saveCustomGame(onGameSaved) },
-                modifier = Modifier.fillMaxWidth(),
-                style = ButtonStyle.GOLD,
-                isLarge = true,
-                enabled = !uiState.isSaving,
-                text = if (uiState.isSaving) "Saving…" else stringResource(R.string.save_to_wishlist)
-            )
-
-            uiState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
 
             Text(
                 text = stringResource(R.string.custom_game_footer),

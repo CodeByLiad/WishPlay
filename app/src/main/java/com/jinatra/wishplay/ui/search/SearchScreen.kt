@@ -114,7 +114,7 @@ fun SearchScreen(
             // Screen Header
             Text(
                 text = "Find games",
-                style = MaterialTheme.typography.displayLarge,
+                style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
@@ -168,7 +168,7 @@ fun SearchScreen(
                                     text = "Search any game",
                                     fontFamily = BodyFontFamily,
                                     fontSize = 16.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             innerTextField()
@@ -177,7 +177,7 @@ fun SearchScreen(
                     if (uiState.query.isNotEmpty()) {
                         IconButton(
                             onClick = viewModel::onClearQuery,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
@@ -248,7 +248,7 @@ fun SearchScreen(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(8.dp))
                                             .clickable { viewModel.onClearRecent() }
-                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            .padding(horizontal = 12.dp, vertical = 14.dp)
                                     )
                                 }
 
@@ -368,7 +368,7 @@ fun SearchScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "No match for “${uiState.query}”",
+                                text = if (uiState.query.isBlank()) "No games to explore yet" else "No match for “${uiState.query}”",
                                 style = MaterialTheme.typography.headlineMedium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -518,17 +518,12 @@ fun RecentSearchChip(
                 fontWeight = FontWeight.Medium,
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.clickable { onSelect() }
+                modifier = Modifier.clickable { onSelect() }.padding(vertical = 12.dp)
             )
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Remove $query",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .clickable { onRemove() }
-            )
+            IconButton(onClick = onRemove, modifier = Modifier.size(48.dp)) {
+                Icon(Icons.Default.Close, contentDescription = "Remove $query",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }
@@ -626,7 +621,7 @@ fun SearchResultRow(
                     .clickable(
                         enabled = !isUpdating,
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
+                        indication = androidx.compose.material3.ripple(),
                         onClick = onToggleWishlist
                     ),
                 contentAlignment = Alignment.Center
@@ -635,7 +630,7 @@ fun SearchResultRow(
                 else {
                 Icon(
                     imageVector = if (game.inWishlist) Icons.Default.Check else Icons.Default.Add,
-                    contentDescription = if (game.inWishlist) "In your wishlist" else "Add to wishlist",
+                    contentDescription = if (game.inWishlist) "Remove ${game.title} from wishlist" else "Add ${game.title} to wishlist",
                     tint = if (game.inWishlist) MaterialTheme.colorScheme.onSecondaryContainer
                     else customColors.onAccent,
                     modifier = Modifier.size(22.dp)

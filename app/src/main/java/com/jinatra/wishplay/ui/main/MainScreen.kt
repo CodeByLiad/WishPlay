@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,13 +51,17 @@ fun MainScreen(
     onNavigateToDetails: (String) -> Unit,
     onNavigateToCustom: () -> Unit,
     onNavigateToCalendar: () -> Unit,
-    onNavigateToAdmin: () -> Unit = {}
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(NavigationTab.WISHLIST) }
     val wishlistViewModel: WishlistViewModel = hiltViewModel()
     val searchViewModel: com.jinatra.wishplay.ui.search.SearchViewModel = hiltViewModel()
     val alertsViewModel: com.jinatra.wishplay.ui.alerts.AlertsViewModel = hiltViewModel()
     val profileViewModel: com.jinatra.wishplay.ui.profile.ProfileViewModel = hiltViewModel()
+
+    val tabStateHolder = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
+    androidx.activity.compose.BackHandler(enabled = selectedTab != NavigationTab.WISHLIST) {
+        selectedTab = NavigationTab.WISHLIST
+    }
 
     Scaffold(
         bottomBar = {
@@ -73,6 +78,7 @@ fun MainScreen(
                 .padding(paddingValues)
                 .consumeWindowInsets(paddingValues)
         ) {
+            tabStateHolder.SaveableStateProvider(selectedTab.route) {
             when (selectedTab) {
                 NavigationTab.WISHLIST -> {
                     WishlistScreen(
@@ -94,16 +100,17 @@ fun MainScreen(
                     com.jinatra.wishplay.ui.alerts.AlertsScreen(
                         viewModel = alertsViewModel,
                         onNavigateToDetails = onNavigateToDetails,
-                        onNavigateToCalendar = onNavigateToCalendar
+                        onNavigateToCalendar = onNavigateToCalendar,
+                        onNavigateToSearch = { selectedTab = NavigationTab.SEARCH }
                     )
                 }
                 NavigationTab.PROFILE -> {
                     com.jinatra.wishplay.ui.profile.ProfileScreen(
-                        viewModel = profileViewModel,
-                        onNavigateToAdmin = onNavigateToAdmin
+                        viewModel = profileViewModel
                     )
                 }
             }
+        }
         }
     }
 }
@@ -114,175 +121,24 @@ fun WishPlayBottomNav(
     onSelectTab: (NavigationTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val customColors = WishPlayThemeColors
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(84.dp)
-            .background(customColors.surfaceContainer)
-            .padding(horizontal = 4.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceAround,
-        verticalAlignment = Alignment.CenterVertically
+    androidx.compose.material3.NavigationBar(
+        modifier = modifier,
+        containerColor = WishPlayThemeColors.surfaceContainer,
+        windowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
     ) {
         NavigationTab.entries.forEach { tab ->
-            val isSelected = selectedTab == tab
             val icon = when (tab) {
                 NavigationTab.WISHLIST -> Icons.Default.List
                 NavigationTab.SEARCH -> Icons.Default.Search
                 NavigationTab.ALERTS -> Icons.Default.Notifications
                 NavigationTab.PROFILE -> Icons.Default.Person
             }
-
-            val indicatorWidth by animateDpAsState(
-                targetValue = if (isSelected) 64.dp else 56.dp,
-                animationSpec = WishPlayMotion.expressiveSpring(),
-                label = "nav_width"
+            NavigationBarItem(
+                selected = selectedTab == tab,
+                onClick = { onSelectTab(tab) },
+                icon = { Icon(icon, contentDescription = null) },
+                label = { Text(tab.title) }
             )
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { onSelectTab(tab) }
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(width = indicatorWidth, height = 32.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = tab.title,
-                        tint = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                Text(
-                    text = tab.title,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun SearchPlaceholderTab(
-    onAddCustom: () -> Unit,
-    onOpenDetails: (String) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Find games",
-            style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Text(
-            text = "Full online IGDB and Steam search connects in Phase 2. In Phase 1, you can add any game directly as a custom game.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(WishPlayThemeColors.surfaceContainer)
-                .padding(20.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "Add a custom game",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "Save any game WishPlay doesn't know yet, set the date, and your countdown alerts will fire automatically.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                com.jinatra.wishplay.ui.components.ExpressiveButton(
-                    onClick = onAddCustom,
-                    style = com.jinatra.wishplay.ui.components.ButtonStyle.GOLD,
-                    text = "Add custom game"
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AlertsPlaceholderTab() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Alerts",
-            style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Text(
-            text = "Background WorkManager alerts and notification channels activate in Phase 3. Your scheduled dates from Phase 1 will automatically be hooked up.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-fun ProfilePlaceholderTab() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Profile",
-            style = MaterialTheme.typography.displayLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(WishPlayThemeColors.surfaceContainer)
-                .padding(20.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "Guest Mode",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "This phone only · Wishlist is saved in local encrypted database (SQLCipher). Sign-in sync arrives in Phase 4.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
     }
 }

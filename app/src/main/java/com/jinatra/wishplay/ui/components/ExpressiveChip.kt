@@ -14,7 +14,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,7 +77,7 @@ fun ExpressiveChip(
 
     Box(
         modifier = modifier
-            .height(48.dp)
+            .heightIn(min = 48.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -89,10 +89,10 @@ fun ExpressiveChip(
                 selected = selected,
                 role = Role.Checkbox,
                 interactionSource = interactionSource,
-                indication = null,
+                indication = androidx.compose.material3.ripple(),
                 onClick = onClick
             )
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(

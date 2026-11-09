@@ -14,29 +14,42 @@ import javax.inject.Inject
 data class WelcomeUiState(
     val currentStep: Int = 0, // 0 = welcome, 1 = platforms, 2 = lead
     val selectedPlatforms: Set<String> = emptySet(),
-    val selectedLead: String = "1 week"
+    val selectedLead: String = "1 week",
+    val isSigningIn: Boolean = false,
+    val signInError: String? = null
 )
 
 @HiltViewModel
 class WelcomeViewModel @Inject constructor(
     private val userPreferences: UserPreferences,
-    private val wishlistRepository: WishlistRepository
+    private val wishlistRepository: WishlistRepository,
+    private val authRepository: com.jinatra.wishplay.data.repository.AuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WelcomeUiState())
     val uiState = _uiState.asStateFlow()
 
     fun onContinueAsGuest() {
+        if (_uiState.value.isSigningIn) return
         viewModelScope.launch {
             userPreferences.setUserRole("guest")
             _uiState.update { it.copy(currentStep = 1) }
         }
     }
 
-    fun onContinueWithGoogle() {
+    fun onContinueWithGoogle(context: android.content.Context) {
+        if (_uiState.value.isSigningIn) return
+        _uiState.update { it.copy(isSigningIn = true, signInError = null) }
         viewModelScope.launch {
-            userPreferences.setUserRole("free")
-            _uiState.update { it.copy(currentStep = 1) }
+            try {
+                authRepository.signInWithGoogle(context).onSuccess {
+                    com.jinatra.wishplay.alerts.SyncWorker.schedulePeriodicSync(context.applicationContext)
+                    _uiState.update { it.copy(currentStep = 1) }
+                }.onFailure { error ->
+                    _uiState.update { it.copy(signInError = if (error.message == "Sign-in cancelled") null
+                        else "Couldn't sign in. Try again or continue as a guest.") }
+                }
+            } finally { _uiState.update { it.copy(isSigningIn = false) } }
         }
     }
 

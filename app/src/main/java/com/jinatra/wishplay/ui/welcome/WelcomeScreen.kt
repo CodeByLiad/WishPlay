@@ -61,6 +61,8 @@ fun WelcomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    androidx.activity.compose.BackHandler(enabled = uiState.currentStep > 0) { viewModel.onStepBack() }
     AnimatedContent(
         targetState = uiState.currentStep,
         transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -68,7 +70,9 @@ fun WelcomeScreen(
     ) { step ->
         when (step) {
             0 -> WelcomeStepZero(
-                onContinueWithGoogle = viewModel::onContinueWithGoogle,
+                onContinueWithGoogle = { viewModel.onContinueWithGoogle(context) },
+                isSigningIn = uiState.isSigningIn,
+                signInError = uiState.signInError,
                 onContinueAsGuest = viewModel::onContinueAsGuest
             )
             1 -> SetupStepPlatforms(
@@ -92,7 +96,9 @@ fun WelcomeScreen(
 @Composable
 private fun WelcomeStepZero(
     onContinueWithGoogle: () -> Unit,
-    onContinueAsGuest: () -> Unit
+    onContinueAsGuest: () -> Unit,
+    isSigningIn: Boolean,
+    signInError: String?
 ) {
     val customColors = WishPlayThemeColors
 
@@ -100,8 +106,9 @@ private fun WelcomeStepZero(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 40.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Column(
             modifier = Modifier.padding(top = 24.dp),
@@ -159,7 +166,8 @@ private fun WelcomeStepZero(
                 modifier = Modifier.fillMaxWidth(),
                 style = ButtonStyle.FILLED,
                 isLarge = true,
-                text = stringResource(R.string.continue_with_google)
+                enabled = !isSigningIn,
+                text = if (isSigningIn) "Signing in…" else stringResource(R.string.continue_with_google)
             )
 
             ExpressiveButton(
@@ -167,9 +175,12 @@ private fun WelcomeStepZero(
                 modifier = Modifier.fillMaxWidth(),
                 style = ButtonStyle.TONAL,
                 isLarge = true,
+                enabled = !isSigningIn,
                 text = stringResource(R.string.continue_as_guest)
             )
 
+            signInError?.let { Text(it, color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium) }
             Text(
                 text = stringResource(R.string.guest_note),
                 style = MaterialTheme.typography.bodySmall,
@@ -196,8 +207,9 @@ private fun SetupStepPlatforms(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Column {
             SetupTopBar(step = 1, totalSteps = 2, onBack = onBack, onSkip = onSkip)
@@ -310,8 +322,9 @@ private fun SetupStepLead(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Column {
             SetupTopBar(step = 2, totalSteps = 2, onBack = onBack, onSkip = onSkip)

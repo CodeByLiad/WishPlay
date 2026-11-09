@@ -74,7 +74,7 @@ class SearchRepository @Inject constructor(
     /** Only the three fields the cross-platform dedupe reads; not a general domain-to-DTO mapping. */
     private fun Game.toCoverageDto() = GameDto(id = id, title = title, platforms = platforms)
 
-    suspend fun addGameToWishlist(game: Game, isPro: Boolean = false): Result<Unit> {
+    suspend fun addGameToWishlist(game: Game): Result<Unit> {
         // 1. Save game entity to Room
         cacheSummary(game)
         try {
@@ -85,7 +85,7 @@ class SearchRepository @Inject constructor(
             // The cached summary can still be tracked offline and refreshed by the daily worker.
         }
         // 2. Add to wishlist
-        return wishlistRepository.addGameToWishlist(game.id, isPro)
+        return wishlistRepository.addGameToWishlist(game.id)
     }
 
     suspend fun cacheSummary(game: Game) {

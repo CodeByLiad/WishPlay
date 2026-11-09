@@ -32,7 +32,6 @@ data class SearchUiState(
     val popularQueries: List<String> = emptyList(),
     val wishlistedIds: Set<String> = emptySet(),
     val isLoading: Boolean = false,
-    val isPro: Boolean = false,
     val snackbarMessage: String? = null,
     val hasMore: Boolean = false,
     val error: String? = null,
@@ -40,7 +39,7 @@ data class SearchUiState(
     val sourceNotice: String? = null
 )
 
-private data class SearchMetadata(val hasMore: Boolean, val error: String?, val isPro: Boolean, val busyIds: Set<String>, val sourceNotice: String?, val otherLoading: Boolean)
+private data class SearchMetadata(val hasMore: Boolean, val error: String?, val busyIds: Set<String>, val sourceNotice: String?, val otherLoading: Boolean)
 
 @OptIn(FlowPreview::class)
 @HiltViewModel
@@ -62,11 +61,10 @@ class SearchViewModel @Inject constructor(
     private var otherJob: Job? = null
     private var loadedPage = 0
     private var generation = 0
-    private val _isPro = userPreferences.userRole
     private val _busyGames = MutableStateFlow<Set<String>>(emptySet())
     private val _sourceNotice = MutableStateFlow<String?>(null)
-    private val _metadata = combine(_pageState, _isPro, _busyGames, _sourceNotice, _otherLoading) { page, role, busy, notice, otherLoading ->
-        SearchMetadata(page.first, page.second, role == "pro" || role == "admin", busy, notice, otherLoading)
+    private val _metadata = combine(_pageState, _busyGames, _sourceNotice, _otherLoading) { page, busy, notice, otherLoading ->
+        SearchMetadata(page.first, page.second, busy, notice, otherLoading)
     }
 
     val popularQueries = searchRepository.popularQueries
@@ -97,7 +95,6 @@ class SearchViewModel @Inject constructor(
             popularQueries = popularQueries,
             wishlistedIds = ids,
             isLoading = loading,
-            isPro = metadata.isPro,
             snackbarMessage = snackbar,
             hasMore = metadata.hasMore,
             error = metadata.error,
@@ -184,15 +181,11 @@ class SearchViewModel @Inject constructor(
                 wishlistRepository.removeGameFromWishlist(game.id)
                 _snackbar.value = "Removed ${game.title} from wishlist"
             } else {
-                val result = searchRepository.addGameToWishlist(game, isPro = uiState.value.isPro)
+                val result = searchRepository.addGameToWishlist(game)
                 result.onSuccess {
                     _snackbar.value = "Added ${game.title} to wishlist"
                 }.onFailure { error ->
-                    if (error.message == "CAP_REACHED") {
-                        _snackbar.value = "Wishlist full (25 games). Upgrade to Pro for unlimited."
-                    } else {
-                        _snackbar.value = "Could not add game"
-                    }
+                    _snackbar.value = "Couldn't add this game. Try again."
                 }
             }
             } catch (cancelled: CancellationException) {

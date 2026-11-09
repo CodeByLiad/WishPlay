@@ -71,7 +71,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 fun AlertsScreen(
     viewModel: AlertsViewModel,
     onNavigateToDetails: (String) -> Unit,
-    onNavigateToCalendar: () -> Unit
+    onNavigateToCalendar: () -> Unit,
+    onNavigateToSearch: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -123,7 +124,6 @@ fun AlertsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
             .verticalScroll(scrollState)
             .padding(bottom = 24.dp)
     ) {
@@ -137,14 +137,14 @@ fun AlertsScreen(
         ) {
             Text(
                 text = "Alerts",
-                style = MaterialTheme.typography.displayLarge,
+                style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             IconButton(
                 onClick = onNavigateToCalendar,
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(48.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(WishPlayThemeColors.surfaceContainerHigh)
             ) {
@@ -200,10 +200,11 @@ fun AlertsScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Games with a known date and the bell switched on show up here.",
+                        text = "Add a game with a release date, then turn on its alerts to see it here.",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    TextButton(onClick = onNavigateToSearch) { Text("Find games") }
                 }
             }
         } else {
@@ -474,7 +475,7 @@ fun AlertsScreen(
                 }
             }
 
-            // 4. Price drop switch (Pro gated)
+            // 4. Price-drop alerts, available to everyone.
             GroupedItemContainer(position = GroupPosition.LAST) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -489,21 +490,7 @@ fun AlertsScreen(
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                            if (!uiState.isPro) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = "PRO",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
+
                         }
                         Text(
                             text = "Steam and other PC stores",
@@ -512,9 +499,8 @@ fun AlertsScreen(
                         )
                     }
                     Switch(
-                        checked = uiState.isPro && uiState.alertPrice,
-                        onCheckedChange = { if (uiState.isPro) viewModel.onTogglePrice(it) },
-                        enabled = uiState.isPro,
+                        checked = uiState.alertPrice,
+                        onCheckedChange = viewModel::onTogglePrice,
                         colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
                     )
                 }

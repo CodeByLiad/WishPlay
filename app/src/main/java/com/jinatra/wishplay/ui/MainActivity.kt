@@ -122,9 +122,6 @@ fun WishPlayApp(
                 onNavigateToCalendar = {
                     navController.navigate(Screen.Calendar.route)
                 },
-                onNavigateToAdmin = {
-                    navController.navigate(Screen.Admin.route)
-                }
             )
         }
 
@@ -134,7 +131,9 @@ fun WishPlayApp(
                 viewModel = customViewModel,
                 onBack = { navController.popBackStack() },
                 onGameSaved = { gameId ->
-                    navController.popBackStack()
+                    navController.navigate(Screen.Details.createRoute(gameId)) {
+                        popUpTo(Screen.CustomGame.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -165,12 +164,6 @@ fun WishPlayApp(
             )
         }
 
-        composable(Screen.Admin.route) {
-            val adminViewModel: com.jinatra.wishplay.ui.admin.AdminViewModel = hiltViewModel()
-            com.jinatra.wishplay.ui.admin.AdminScreen(
-                viewModel = adminViewModel,
-                onBack = { navController.popBackStack() }
-            )
-        }
+
     }
 }

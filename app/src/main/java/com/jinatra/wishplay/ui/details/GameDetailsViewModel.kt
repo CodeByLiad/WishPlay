@@ -22,10 +22,10 @@ data class GameDetailsUiState(
     val game: Game? = null,
     val selectedPlatform: String? = null,
     val reqMode: String = "min", // "min" or "rec"
-    val isPro: Boolean = false,
     val snackbarMessage: String? = null,
     val isLoading: Boolean = true,
-    val error: String? = null
+    val error: String? = null,
+    val isUpdating: Boolean = false
 )
 
 @HiltViewModel
@@ -37,6 +37,7 @@ class GameDetailsViewModel @Inject constructor(
 
     private val gameId: String = checkNotNull(savedStateHandle["gameId"])
 
+    private val _updating = MutableStateFlow(false)
     private val _selectedPlatform = MutableStateFlow<String?>(null)
     private val _reqMode = MutableStateFlow("min")
     private val _remoteGame = MutableStateFlow<Game?>(null)
@@ -57,10 +58,9 @@ class GameDetailsViewModel @Inject constructor(
             game = game,
             selectedPlatform = effectivePlat,
             reqMode = reqMode,
-            isPro = false,
             snackbarMessage = snackbar
         )
-    }.combine(_loadState) { state, load -> state.copy(isLoading = load.first, error = load.second) }.stateIn(
+    }.combine(_loadState) { state, load -> state.copy(isLoading = load.first, error = load.second) }.combine(_updating) { state, updating -> state.copy(isUpdating = updating) }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = GameDetailsUiState()
@@ -122,38 +122,54 @@ class GameDetailsViewModel @Inject constructor(
     }
 
     fun toggleWishlist() {
-        val currentGame = uiState.value.game ?: return
+        val game = uiState.value.game ?: return
+        if (_updating.value) return
+        _updating.value = true
         viewModelScope.launch {
-            if (currentGame.inWishlist) {
-                wishlistRepository.removeGameFromWishlist(currentGame.id)
-                _snackbar.value = "${currentGame.title} removed from your wishlist"
-            } else {
-                wishlistRepository.saveGame(currentGame)
-                val result = wishlistRepository.addGameToWishlist(currentGame.id)
-                result.onSuccess {
-                    _snackbar.value = "${currentGame.title} added to your wishlist"
-                }.onFailure { error ->
-                    if (error.message == "CAP_REACHED") {
-                        _snackbar.value = "Wishlist full (25 games). Upgrade to Pro for unlimited."
-                    } else {
-                        _snackbar.value = "Could not add game"
+            try {
+                if (game.inWishlist) {
+                    wishlistRepository.removeGameFromWishlist(game.id)
+                    _snackbar.value = "${game.title} removed from your wishlist"
+                } else {
+                    wishlistRepository.saveGame(game)
+                    wishlistRepository.addGameToWishlist(game.id).onSuccess {
+                        _snackbar.value = "${game.title} added to your wishlist"
+                    }.onFailure {
+                        _snackbar.value = "Couldn't add this game. Try again."
                     }
                 }
-            }
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { _snackbar.value = "Couldn't update your wishlist. Try again." }
+            finally { _updating.value = false }
         }
     }
 
     fun toggleAlert() {
-        val currentGame = uiState.value.game ?: return
+        val game = uiState.value.game ?: return
+        if (_updating.value) return
+        _updating.value = true
         viewModelScope.launch {
-            val newAlert = !currentGame.alertEnabled
-            wishlistRepository.toggleAlert(currentGame.id, newAlert)
-            _snackbar.value = if (newAlert) "Alerts on for ${currentGame.title}" else "Alerts off for ${currentGame.title}"
+            try {
+                wishlistRepository.toggleAlert(game.id, !game.alertEnabled)
+                _snackbar.value = if (game.alertEnabled) "Alerts off for ${game.title}" else "Alerts on for ${game.title}"
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { _snackbar.value = "Couldn't change alerts. Try again." }
+            finally { _updating.value = false }
         }
     }
 
     fun togglePriceAlert() {
-        _snackbar.value = "Get Pro to see price-drop alerts for PC stores."
+        val game = uiState.value.game ?: return
+        if (!game.inWishlist || _updating.value) return
+        _updating.value = true
+        viewModelScope.launch {
+            try {
+                wishlistRepository.togglePriceAlert(game.id, !game.priceAlertEnabled)
+                _snackbar.value = if (game.priceAlertEnabled) "Price alerts off" else "Price alerts on"
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { _snackbar.value = "Couldn't change price alerts. Try again." }
+            finally { _updating.value = false }
+        }
     }
 
     fun clearSnackbar() {

@@ -56,9 +56,6 @@ class BackupRepository @Inject constructor(
         val imported = database.withTransaction {
             val ids = dao.getWishlistSync().map { it.game.id }.toSet()
             val additions = backup.games.filter { it.id !in ids }
-            require(role in setOf("pro", "admin") || ids.size + additions.size <= WishlistRepository.FREE_CAP) {
-                "This import would exceed the 25-game free wishlist limit. No games were imported."
-            }
             val now = System.currentTimeMillis()
             val order = dao.getMaxOrderIndex() ?: 0
             additions.forEachIndexed { index, game ->

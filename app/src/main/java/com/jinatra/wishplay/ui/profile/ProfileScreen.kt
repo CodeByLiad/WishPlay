@@ -62,6 +62,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -88,7 +91,6 @@ import com.jinatra.wishplay.ui.theme.WishPlayThemeColors
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel,
-    onNavigateToAdmin: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -127,7 +129,6 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -138,8 +139,6 @@ fun ProfileScreen(
                 email = uiState.user.email,
                 initials = uiState.user.initials,
                 isGuest = uiState.user.isGuest,
-                isPro = uiState.user.isPro,
-                role = uiState.user.role
             )
 
             WishlistBackupSection(viewModel)
@@ -151,51 +150,19 @@ fun ProfileScreen(
                 )
             }
 
-            // Pro Upsell Hero Banner (if not Pro)
-            if (!uiState.user.isPro) {
-                ProUpsellCard(
-                    onGetProClick = { viewModel.openProSheet() }
-                )
-            }
-
-            // Admin Panel Entrypoint (Admin only)
-            if (uiState.user.role == "admin") {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(customColors.surfaceContainer)
-                ) {
-                    ProfileListItem(
-                        icon = Icons.Default.Security,
-                        iconBg = customColors.accent,
-                        iconTint = customColors.onAccent,
-                        title = "Admin panel",
-                        subtitle = "Codes and bKash payments",
-                        onClick = onNavigateToAdmin
-                    )
-                }
-            }
+            DonationSection()
 
             // Look and Feel Section
             LookAndFeelSection(
                 selectedTheme = uiState.themeMode,
                 onSelectTheme = { viewModel.setTheme(it) },
                 selectedAccent = uiState.accentColor,
-                onSelectAccent = { accentKey ->
-                    if (!uiState.user.isPro && accentKey != "gold") {
-                        viewModel.openProSheet()
-                    } else {
-                        viewModel.setAccent(accentKey)
-                    }
-                },
-                isPro = uiState.user.isPro
+                onSelectAccent = viewModel::setAccent
             )
 
             // Home Screen Widget Section
             WidgetPreviewSection(
                 nextDropGame = uiState.nextDropGame,
-                isPro = uiState.user.isPro
             )
 
             // Alerts and Sharing Section
@@ -216,7 +183,7 @@ fun ProfileScreen(
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
                         putExtra(Intent.EXTRA_SUBJECT, "My WishPlay Wishlist")
-                        putExtra(Intent.EXTRA_TEXT, "Check out my upcoming game wishlist on WishPlay! https://wishplay.app/l/tanvir")
+                        putExtra(Intent.EXTRA_TEXT, "My WishPlay wishlist\n\n" + uiState.wishlistGames.joinToString("\n") { it.title })
                     }
                     context.startActivity(Intent.createChooser(shareIntent, "Share your wishlist"))
                 }
@@ -225,11 +192,9 @@ fun ProfileScreen(
             // Account Section
             AccountSection(
                 isGuest = uiState.user.isGuest,
-                isPro = uiState.user.isPro,
                 syncState = uiState.syncState,
                 lastSyncedTime = uiState.lastSyncedTime,
                 onSyncClick = { viewModel.triggerSync() },
-                onRedeemClick = { viewModel.openRedeemSheet() },
                 onCheckUpdateClick = { viewModel.checkForUpdates(isManual = true) },
                 onPrivacyClick = { viewModel.openPrivacySheet() },
                 onSignOutClick = { viewModel.signOut() }
@@ -269,12 +234,7 @@ fun ProfileScreen(
         )
     }
 
-    if (uiState.isRedeemSheetOpen) {
-        RedeemCodeSheet(
-            onDismiss = { viewModel.closeRedeemSheet() },
-            onRedeem = { code -> viewModel.redeemCode(code) }
-        )
-    }
+
 
     if (uiState.isPrivacySheetOpen) {
         PrivacyPolicySheet(
@@ -300,15 +260,7 @@ fun ProfileScreen(
         )
     }
 
-    if (uiState.isProSheetOpen) {
-        ProPaymentSheet(
-            bkashConfig = uiState.bkashConfig,
-            isBkashSubmitting = uiState.isBkashSubmitting,
-            paddleCheckoutUrl = uiState.paddleCheckoutUrl,
-            onDismiss = { viewModel.closeProSheet() },
-            onBkashSubmit = { trxId, sender -> viewModel.submitBkash(trxId, sender) }
-        )
-    }
+
 
     if (uiState.isUpdateSheetOpen && uiState.updateManifest != null) {
         UpdateSheet(
@@ -327,8 +279,6 @@ private fun ProfileHeader(
     email: String,
     initials: String,
     isGuest: Boolean,
-    isPro: Boolean,
-    role: String
 ) {
     val customColors = WishPlayThemeColors
 
@@ -344,7 +294,7 @@ private fun ProfileHeader(
             modifier = Modifier
                 .size(76.dp)
                 .clip(CookieShape(CookieShapeType.C12))
-                .background(if (isPro) customColors.accent else MaterialTheme.colorScheme.secondaryContainer),
+                .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center
         ) {
             if (isGuest) {
@@ -360,7 +310,7 @@ private fun ProfileHeader(
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 26.sp,
-                        color = if (isPro) customColors.onAccent else MaterialTheme.colorScheme.onSecondaryContainer
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 )
             }
@@ -382,38 +332,7 @@ private fun ProfileHeader(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            if (isPro) {
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(customColors.accent)
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .clip(CookieShape(CookieShapeType.C9))
-                            .background(customColors.onAccent),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = null,
-                            tint = customColors.accent,
-                            modifier = Modifier.size(10.dp)
-                        )
-                    }
-                    Text(
-                        text = if (role == "admin") "Admin · Pro for life" else "Pro for life",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
-                        color = customColors.onAccent
-                    )
-                }
-            }
+
         }
     }
 }
@@ -488,66 +407,11 @@ private fun GuestBanner(
 }
 
 @Composable
-private fun ProUpsellCard(
-    onGetProClick: () -> Unit
-) {
-    val customColors = WishPlayThemeColors
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 12.dp, bottomStart = 32.dp, bottomEnd = 32.dp))
-            .background(customColors.accent)
-            .clickable { onGetProClick() }
-            .padding(20.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "WishPlay Pro",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 24.sp
-                    ),
-                    color = customColors.onAccent
-                )
-
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CookieShape(CookieShapeType.C9))
-                        .background(customColors.onAccent),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = customColors.accent,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            Text(
-                text = "Unlimited list, price-drop alerts, themes and widgets. One payment, yours for life.",
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = customColors.onAccent
-            )
-        }
-    }
-}
-
-@Composable
 private fun LookAndFeelSection(
     selectedTheme: String,
     onSelectTheme: (String) -> Unit,
     selectedAccent: String,
     onSelectAccent: (String) -> Unit,
-    isPro: Boolean
 ) {
     val customColors = WishPlayThemeColors
 
@@ -605,9 +469,7 @@ private fun LookAndFeelSection(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            if (!isPro) {
-                LockPillTag()
-            }
+
         }
 
         // Swatches
@@ -626,9 +488,10 @@ private fun LookAndFeelSection(
                 val isSelected = selectedAccent == key
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(color)
+                        .semantics { contentDescription = "${key.replaceFirstChar { it.uppercase() }} accent"; selected = isSelected }
                         .clickable { onSelectAccent(key) }
                         .then(
                             if (isSelected) BorderStroke(3.dp, MaterialTheme.colorScheme.onSurface).let {
@@ -654,7 +517,6 @@ private fun LookAndFeelSection(
 @Composable
 private fun WidgetPreviewSection(
     nextDropGame: Game?,
-    isPro: Boolean
 ) {
     val customColors = WishPlayThemeColors
 
@@ -673,9 +535,7 @@ private fun WidgetPreviewSection(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            if (!isPro) {
-                LockPillTag()
-            }
+
         }
 
         // Widget Preview Card matching user's real next drop game
@@ -839,11 +699,9 @@ private fun AlertsAndSharingSection(
 @Composable
 private fun AccountSection(
     isGuest: Boolean,
-    isPro: Boolean,
     syncState: SyncState,
     lastSyncedTime: Long,
     onSyncClick: () -> Unit,
-    onRedeemClick: () -> Unit,
     onCheckUpdateClick: () -> Unit,
     onPrivacyClick: () -> Unit,
     onSignOutClick: () -> Unit
@@ -938,21 +796,7 @@ private fun AccountSection(
 
             ProfileDivider()
 
-            if (isPro) {
-                ProfileListItem(
-                    icon = Icons.Default.Sync,
-                    title = "Restore purchase",
-                    subtitle = "Pull Pro back after a reinstall",
-                    onClick = onSyncClick
-                )
-            } else {
-                ProfileListItem(
-                    icon = Icons.Default.Redeem,
-                    title = "Redeem a code",
-                    subtitle = "Giveaway or discount codes",
-                    onClick = onRedeemClick
-                )
-            }
+
 
             ProfileDivider()
 
@@ -1045,7 +889,7 @@ private fun DangerZoneSection(
                         color = customColors.error
                     )
                     Text(
-                        text = "Removes your list and your Pro record from our servers. Cannot be undone.",
+                        text = "Removes your wishlist and profile from our servers. Cannot be undone.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1120,32 +964,4 @@ private fun ProfileDivider() {
             .height(1.dp)
             .background(WishPlayThemeColors.surfaceContainerHigh)
     )
-}
-
-@Composable
-private fun LockPillTag() {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 8.dp, vertical = 2.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Lock,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(11.dp)
-            )
-            Text(
-                text = "PRO",
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
 }

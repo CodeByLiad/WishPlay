@@ -33,7 +33,6 @@ data class AlertsUiState(
     val alertLead: String = "1 week",
     val alertChanges: Boolean = true,
     val alertPrice: Boolean = true,
-    val isPro: Boolean = false,
     val notificationsEnabled: Boolean = true,
     val showPrimingSheet: Boolean = false,
     val showBatterySheet: Boolean = false
@@ -112,7 +111,6 @@ class AlertsViewModel @Inject constructor(
             alertLead = lead,
             alertChanges = changes,
             alertPrice = price,
-            isPro = role == "pro" || role == "admin",
             notificationsEnabled = notifEnabled,
             showPrimingSheet = priming,
             showBatterySheet = battery

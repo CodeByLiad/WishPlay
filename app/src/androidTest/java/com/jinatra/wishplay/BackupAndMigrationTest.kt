@@ -37,13 +37,18 @@ class BackupAndMigrationTest {
             assertFalse(imported.alertEnabled)
             assertEquals("Preserve me", imported.customNotes)
             assertEquals(BackupImportResult(0, 2), backups.importBackup(backup))
-            val oversized = backup.copy(games = (1..25).map { incoming.copy(id = "c_many_$it") })
-            assertTrue(runCatching { backups.importBackup(oversized) }.isFailure)
-            assertEquals(2, database.wishlistDao().getWishlistCount())
-            assertEquals(2, backups.export(Uri.fromFile(file)))
+            val largeBackup = backup.copy(games = (1..30).map { incoming.copy(id = "c_many_$it") })
+            assertEquals(BackupImportResult(30, 0), backups.importBackup(largeBackup))
+            assertEquals(32, database.wishlistDao().getWishlistCount())
+            // The old free limit no longer applies to normal additions or custom games either.
+            val next = Game("c_after_limit", "Beyond the old limit", platforms = mapOf("PC" to null))
+            wishlist.saveGame(next)
+            wishlist.addGameToWishlist(next.id).getOrThrow()
+            wishlist.addCustomGame("Custom beyond the old limit", listOf("PC"), null, null).getOrThrow()
+            assertEquals(34, backups.export(Uri.fromFile(file)))
             val preview = backups.preview(Uri.fromFile(file))
             assertEquals(0, preview.newCount)
-            assertEquals(2, preview.duplicateCount)
+            assertEquals(34, preview.duplicateCount)
         } finally { database.close(); file.delete() }
     }
 

@@ -27,7 +27,6 @@ data class WishlistUiState(
     val selectedFilter: FilterOption = FilterOption.ALL,
     val selectedSort: SortOption = SortOption.NEAREST_RELEASE,
     val selectedPlatform: String = "All",
-    val isPro: Boolean = false,
     val isFabExpanded: Boolean = false,
     val showSortSheet: Boolean = false,
     val showCapSheet: Boolean = false,
@@ -73,7 +72,6 @@ class WishlistViewModel @Inject constructor(
         val notifSheet = args[7] as Boolean
         val snack = args[8] as String?
 
-        val isPro = role == "pro" || role == "admin"
 
         val nextDrop = games
             .filter { it.status() == ReleaseStatus.UPCOMING && it.alertEnabled }
@@ -85,7 +83,6 @@ class WishlistViewModel @Inject constructor(
             selectedFilter = filter,
             selectedSort = sort,
             selectedPlatform = args[9] as String,
-            isPro = isPro,
             isFabExpanded = fab,
             showSortSheet = sortSheet,
             showCapSheet = capSheet,

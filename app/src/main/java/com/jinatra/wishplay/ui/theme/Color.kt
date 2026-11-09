@@ -54,7 +54,7 @@ val SuccessGreenContainerDark = Color(0xFF0F3D27)
 val TrackDark = Color(0xFF3A3657)
 val ScrimDark = Color(0x99000000)
 
-// Accent Colors (Pro & Free default Gold)
+// Accent colors, available to everyone (default: Gold).
 enum class AccentColor(
     val color: Color,
     val onColor: Color,
