@@ -46,3 +46,11 @@ All features are free for guests and signed-in users. There is no paid wishlist/
 - Initial Gradle-managed instrumentation startup failed before running tests. Direct Android instrumentation subsequently ran the new tests successfully.
 
 Artifacts are generated under `app/build/outputs/apk/debug/` and `app/build/reports/ux-qa/`. The new regression tests remain in `app/src/androidTest/`.
+
+## 1.2.1 authentication connection fix
+
+The user reported Firebase sign-in failing with `Pin verification failed`. A live Android test against the installed 1.2.0 app reproduced the same TLS failure for `identitytoolkit.googleapis.com`, `securetoken.googleapis.com`, and `firestore.googleapis.com`.
+
+The network security configuration pinned the entire Google API domain to a fixed set of CA keys. Version 1.2.1 removes those stale third-party pins from both Android's XML configuration and the shared HTTP client, retaining system certificate trust, hostname verification, and cleartext blocking. This follows [Android's transport-security guidance](https://developer.android.com/privacy-and-security/security-ssl).
+
+After the fix, all three live Android authentication transport tests pass: HTTPS requests reach the affected services, Firebase Authentication returns the expected invalid-token response for a deliberately invalid test token, and cleartext stays blocked. No real account was used or created. All 41 unit tests pass. Google account selection and full cloud sync still need the user's retry after updating.

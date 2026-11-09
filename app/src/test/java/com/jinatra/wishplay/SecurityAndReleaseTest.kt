@@ -64,13 +64,11 @@ class SecurityAndReleaseTest {
     }
 
     @Test
-    fun testCertificatePinnerConfiguration() {
-        val pinner = NetworkModule.provideCertificatePinner()
-        assertNotNull(pinner)
-        assertTrue(pinner.pins.isNotEmpty())
-        val client = NetworkModule.provideOkHttpClient(pinner)
+    fun testNetworkClientUsesPlatformTlsDefaults() {
+        val client = NetworkModule.provideOkHttpClient()
         assertNotNull(client)
-        assertEquals(pinner.pins.size, client.certificatePinner.pins.size)
+        assertTrue(client.certificatePinner.pins.isEmpty())
+        org.junit.Assert.assertSame(okhttp3.OkHttpClient().hostnameVerifier, client.hostnameVerifier)
     }
 
     @Test
