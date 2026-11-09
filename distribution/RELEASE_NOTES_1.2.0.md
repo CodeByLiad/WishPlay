@@ -19,6 +19,7 @@ WishPlay is now completely free. All features are available to guests and signed
 
 - Package: `com.jinatra.wishplay`; version code: **4**. Signed with the existing Jinatra release certificate for compatibility with previous Jinatra APKs.
 - 41 unit tests and 15 selected emulator tests passed before release preparation. Tests cover backup/import beyond the former cap, migration, catalog fallbacks with fixture data, free themes, donation copying, date selection, platform preferences, and posting all four notification types to Android.
+- A fresh signed-release install/launch check was blocked by an Android system crash in the dedicated emulator during installation. The signed APK passes signature checks, but that extra runtime smoke test remains incomplete.
 - Live catalog verification returned HTTP 522 from RAWG. Catalog completeness and remote artwork availability are not guaranteed; custom games remain available.
 - Successful Google sign-in/cloud sync with a real account and long-running reminder delivery under physical-device battery restrictions remain unverified.
 

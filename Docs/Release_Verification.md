@@ -35,6 +35,8 @@ The release keeps the existing package and Jinatra signing key, allowing in-plac
 
 ## Verification limits and outstanding work
 
+- A fresh signed-release install/launch check could not complete: the dedicated emulator's Android system process crashed during package installation (FinalizerWatchdogDaemon timeout / DeadSystemException). The failure occurred in Android system services; it did not produce a WishPlay application crash. Signed-release runtime smoke testing remains incomplete.
+
 - Live RAWG verification returned HTTP 522. Catalog completeness and remote artwork availability cannot be guaranteed. Store fallback behavior passed fixture-based tests.
 - Successful Google sign-in/cloud sync with a real account and long-running reminder delivery under physical-device battery restrictions remain unverified.
 - Android posting of release, countdown, date-change, and price-drop notifications passed on the emulator with notification permission granted. This does not prove exact background delivery timing on every device.
