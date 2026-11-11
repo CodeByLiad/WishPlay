@@ -35,13 +35,13 @@ fun DonationSection() {
             .background(WishPlayThemeColors.surfaceContainer).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text("Support WishPlay", style = MaterialTheme.typography.headlineMedium)
-        Text("Every feature is free. If you'd like to support development, you can donate any amount through bKash.",
+        Text("Support WishPlay", style = MaterialTheme.typography.titleLarge)
+        Text("Every feature is free. Optional bKash support helps development.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text("bKash number", style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         SelectionContainer {
-            Text(BKASH_DONATION_NUMBER, style = MaterialTheme.typography.headlineLarge)
+            Text(BKASH_DONATION_NUMBER, style = MaterialTheme.typography.headlineSmall)
         }
         ExpressiveButton(
             onClick = {

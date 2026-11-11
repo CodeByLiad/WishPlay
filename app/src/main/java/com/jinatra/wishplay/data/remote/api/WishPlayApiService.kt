@@ -20,6 +20,12 @@ import org.json.JSONObject
 import java.net.URLEncoder
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.last
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.CancellationException
@@ -30,6 +36,9 @@ interface WishPlayApiService {
     suspend fun searchGames(query: String, platform: String): List<GameDto>
     suspend fun searchGamesPage(query: String, platform: String, page: Int): GameSearchPage =
         GameSearchPage(if (page == 1) searchGames(query, platform) else emptyList())
+    fun searchGamesUpdates(query: String, platform: String, page: Int): kotlinx.coroutines.flow.Flow<GameSearchPage> =
+        kotlinx.coroutines.flow.flow { emit(searchGamesPage(query, platform, page)) }
+    fun cachedSearchPage(query: String, platform: String, page: Int): GameSearchPage? = null
 
     /** Games matching [query] that the [platform] filter excluded, minus anything in [shown]. */
     suspend fun searchOtherPlatforms(query: String, platform: String, shown: List<GameDto>): List<GameDto> = emptyList()
@@ -53,34 +62,81 @@ class WishPlayApiServiceImpl @Inject constructor(
     override suspend fun searchGames(query: String, platform: String): List<GameDto> =
         searchGamesPage(query, platform, 1).games
 
-    override suspend fun searchGamesPage(query: String, platform: String, page: Int): GameSearchPage = coroutineScope {
-        if (page != 1) return@coroutineScope kotlinx.coroutines.withTimeout(6000) { searchRawgPage(query, platform, page) }
-        // Independent source budgets prevent an unavailable database from hiding working stores.
-        val primary = async { boundedSource(4000) { searchRawgPage(query, platform, page) } }
-        val steam = if (platform in listOf("All", "PC")) async { boundedSource(7000) { stores.searchSteam(query) } } else null
-        val apple = if (platform in listOf("All", "iOS")) async { boundedSource(7000) { stores.searchApple(query) } } else null
-        val play = if (platform in listOf("All", "Android")) async { boundedSource(7000) { googlePlay.search(query) } } else null
-        val rawgResult = primary.await()
-        val steamResult = steam?.await()
-        val appleResult = apple?.await()
-        val playResult = play?.await()
-        if (rawgResult.isFailure && listOf(steamResult, appleResult, playResult).none { it?.isSuccess == true }) {
-            throw IOException("Game providers are unavailable", rawgResult.exceptionOrNull())
-        }
-        val base = rawgResult.getOrNull()?.games.orEmpty()
-        val additions = steamResult?.getOrNull().orEmpty() + appleResult?.getOrNull().orEmpty() + playResult?.getOrNull().orEmpty()
-        val unique = additions.filter { extra -> base.none { existing ->
-            catalogTitleKey(existing.title) == catalogTitleKey(extra.title) && existing.platforms.keys.containsAll(extra.platforms.keys)
-        } }
-        val warnings = buildList {
-            if (rawgResult.isFailure) add("RAWG is unavailable; showing store results.")
-            if (steamResult?.isFailure == true) add("Steam is unavailable; other results are still shown.")
-            if (appleResult?.isFailure == true) add("App Store is unavailable; other results are still shown.")
-            if (playResult?.isFailure == true) add("Google Play is unavailable; other results are still shown.")
-        }
-        GameSearchPage(games = (base + unique).distinctBy { it.id },
-            hasMore = rawgResult.getOrNull()?.hasMore == true, warnings = warnings)
+    private data class Snapshot(val time: Long, val page: GameSearchPage)
+    private val searchCache = object : LinkedHashMap<String, Snapshot>(32, .75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Snapshot>?) = size > 32
     }
+    private fun cacheKey(query: String, platform: String, page: Int) = "$platform:$page:${catalogTitleKey(query)}"
+    override fun cachedSearchPage(query: String, platform: String, page: Int): GameSearchPage? = synchronized(searchCache) {
+        searchCache[cacheKey(query, platform, page)]?.takeIf {
+            android.os.SystemClock.elapsedRealtime() - it.time < 24 * 60 * 60_000L
+        }?.page
+    }
+
+    override suspend fun searchGamesPage(query: String, platform: String, page: Int): GameSearchPage =
+        searchGamesUpdates(query, platform, page).last()
+
+    /** Emit each working store immediately; a slow provider only delays its own additions. */
+    override fun searchGamesUpdates(query: String, platform: String, page: Int): kotlinx.coroutines.flow.Flow<GameSearchPage> =
+        kotlinx.coroutines.flow.channelFlow {
+            val key = cacheKey(query, platform, page)
+            val snapshot = synchronized(searchCache) { searchCache[key] }
+                ?.takeIf { android.os.SystemClock.elapsedRealtime() - it.time < 24 * 60 * 60_000L }
+            if (snapshot != null) {
+                if (snapshot.page.isComplete && android.os.SystemClock.elapsedRealtime() - snapshot.time < 60_000L) {
+                    send(snapshot.page)
+                    return@channelFlow
+                }
+                send(snapshot.page.copy(isComplete = false, hasMore = false,
+                    warnings = listOf("Saved results. Checking for updates…")))
+            }
+            if (page != 1) {
+                val value = kotlinx.coroutines.withTimeout(6000) { searchRawgPage(query, platform, page) }
+                synchronized(searchCache) { searchCache[key] = Snapshot(android.os.SystemClock.elapsedRealtime(), value) }
+                send(value)
+                return@channelFlow
+            }
+            val sources = linkedMapOf<String, suspend () -> GameSearchPage>()
+            sources["RAWG"] = { searchRawgPage(query, platform, page) }
+            if (platform in listOf("All", "PC")) sources["Steam"] = { GameSearchPage(stores.searchSteam(query)) }
+            if (platform in listOf("All", "iOS")) sources["App Store"] = { GameSearchPage(stores.searchApple(query)) }
+            if (platform in listOf("All", "Android")) sources["Google Play"] = { GameSearchPage(googlePlay.search(query)) }
+            val responses = linkedMapOf<String, Result<GameSearchPage>>()
+            val lock = Mutex()
+            sources.map { (name, request) -> launch {
+                val response = boundedSource(if (name == "RAWG") 4000 else 7000, request)
+                lock.withLock {
+                    responses[name] = response
+                    val complete = responses.size == sources.size
+                    if (complete && responses.values.none { it.isSuccess }) {
+                        if (snapshot == null) throw IOException("Game providers are unavailable", response.exceptionOrNull())
+                        send(snapshot.page.copy(isComplete = true, warnings = listOf("Showing saved results. Providers are unavailable; try again to refresh.")))
+                        return@withLock
+                    }
+                    val base = responses["RAWG"]?.getOrNull()?.games.orEmpty()
+                    val additions = listOf("Steam", "App Store", "Google Play").flatMap { responses[it]?.getOrNull()?.games.orEmpty() }
+                    val unique = additions.filter { extra -> base.none { existing ->
+                        catalogTitleKey(existing.title) == catalogTitleKey(extra.title) && existing.platforms.keys.containsAll(extra.platforms.keys)
+                    } }
+                    val queryKey = catalogTitleKey(query)
+                    val games = (base + unique).distinctBy { it.id }.sortedBy { game ->
+                        val title = catalogTitleKey(game.title)
+                        when { queryKey.isBlank() || title == queryKey -> 0
+                            title.startsWith(queryKey) -> 1; title.contains(queryKey) -> 2; else -> 3 }
+                    }
+                    if (games.isNotEmpty() || complete) {
+                        val warnings = sources.keys.filter { responses[it]?.isFailure == true }.map {
+                            if (it == "RAWG") "RAWG is unavailable; showing store results."
+                            else "$it is unavailable; other results are still shown."
+                        }
+                        val value = GameSearchPage(games, hasMore = complete && responses["RAWG"]?.getOrNull()?.hasMore == true,
+                            warnings = warnings, isComplete = complete)
+                        synchronized(searchCache) { searchCache[key] = Snapshot(android.os.SystemClock.elapsedRealtime(), value) }
+                        send(value)
+                    }
+                }
+            } }.joinAll()
+        }.flowOn(Dispatchers.IO)
 
     private suspend fun <T> boundedSource(millis: Long, block: suspend () -> T): Result<T> =
         kotlinx.coroutines.withTimeoutOrNull(millis) { attempt(block) }
@@ -154,6 +210,8 @@ class WishPlayApiServiceImpl @Inject constructor(
         listOfNotNull(steam.await(), apple.await()).fold(game) { result, store ->
             result.copy(platforms = result.platforms + store.platforms,
                 coverUrl = result.coverUrl ?: store.coverUrl,
+                requirements = store.requirements ?: result.requirements,
+                storageSizes = result.storageSizes + store.storageSizes.filterValues { it != null },
                 releaseEvidence = result.releaseEvidence.toMutableMap().apply {
                     store.releaseEvidence.forEach { (platform, evidence) -> put(platform, (get(platform).orEmpty() + evidence).distinct()) }
                 })

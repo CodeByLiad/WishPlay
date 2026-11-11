@@ -1,176 +1,58 @@
 package com.jinatra.wishplay.ui.wishlist
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.jinatra.wishplay.domain.model.Game
-import com.jinatra.wishplay.domain.model.ReleaseStatus
-import com.jinatra.wishplay.ui.components.CookieShapeType
-import com.jinatra.wishplay.ui.components.GameLogo
 import com.jinatra.wishplay.ui.components.GroupPosition
-import com.jinatra.wishplay.ui.components.GroupedItemContainer
 import com.jinatra.wishplay.ui.theme.WishPlayThemeColors
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
+/** Artwork leads the library; release information stays readable beneath it. */
 @Composable
-fun GameRow(
-    game: Game,
-    position: GroupPosition,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val customColors = WishPlayThemeColors
-    val daysUntil = game.daysUntilRelease()
-
-    val (whenText, badgeBg, badgeTextColor, isDashed) = when {
-        game.releaseDate == null -> {
-            val label = if (game.expectedYear != null) "TBA ${game.expectedYear}" else "Date TBA"
-            Tuple4(label, Color.Transparent, MaterialTheme.colorScheme.onSurfaceVariant, true)
-        }
-        daysUntil != null && daysUntil < 0 -> {
-            Tuple4("Out now", customColors.successContainer, customColors.success, false)
-        }
-        daysUntil == 0 -> {
-            Tuple4("Today", customColors.accent, customColors.onAccent, false)
-        }
-        daysUntil == 1 -> {
-            Tuple4("Tomorrow", customColors.accent, customColors.onAccent, false)
-        }
-        daysUntil != null && daysUntil <= 14 -> {
-            Tuple4("In $daysUntil days", customColors.accent, customColors.onAccent, false)
-        }
-        else -> {
-            val formatted = try {
-                LocalDate.parse(game.releaseDate).format(DateTimeFormatter.ofPattern("MMM d", Locale.US))
-            } catch (e: Exception) {
-                game.releaseDate ?: ""
-            }
-            Tuple4(formatted, customColors.surfaceContainerHigh, MaterialTheme.colorScheme.onSurface, false)
-        }
+fun GameRow(game: Game, position: GroupPosition, onClick: () -> Unit, modifier: Modifier = Modifier, wide: Boolean = false) {
+    val colors = MaterialTheme.colorScheme
+    val days = game.daysUntilRelease()
+    val status = when {
+        game.releaseDate == null -> "Date unavailable"
+        days == 0 -> "Out today"
+        days != null && days < 0 -> "Out now"
+        days == 1 -> "Tomorrow"
+        days != null && days <= 14 -> "In $days days"
+        else -> game.releaseDate.orEmpty()
     }
-
-    val platformsText = game.platforms.keys.joinToString(", ")
-
-    GroupedItemContainer(
-        position = position,
-        onClick = onClick,
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            GameLogo(
-                title = game.title,
-                hue = Color(android.graphics.Color.parseColor(game.hueHex)),
-                shapeType = CookieShapeType.fromKey(game.shapeKey),
-                size = 52.dp,
-                imageUrl = game.logoUrl ?: game.coverUrl, fallbackImageUrl = game.coverUrl
-            )
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Text(
-                    text = game.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    if (game.isCustom) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.tertiaryContainer)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "Custom",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                    }
-                    if (game.movedFromDate != null) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(MaterialTheme.colorScheme.tertiaryContainer)
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = "Moved",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                    }
-                    Text(
-                        text = platformsText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+    var artwork by remember(game.coverUrl) { mutableStateOf("Loading artwork") }
+    Card(onClick = onClick, modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomEnd = 28.dp, bottomStart = 12.dp),
+        colors = CardDefaults.cardColors(containerColor = colors.surfaceContainerLow)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(if (wide) 2.1f else 1.25f).background(colors.secondaryContainer)) {
+            if (game.coverUrl != null || game.logoUrl != null) {
+                AsyncImage(model = game.coverUrl ?: game.logoUrl, contentDescription = null,
+                    modifier = Modifier.fillMaxSize().semantics { stateDescription = artwork },
+                    contentScale = ContentScale.Crop, onSuccess = { artwork = "Artwork loaded" },
+                    onError = { artwork = "Artwork unavailable" })
+            } else Text(game.title.take(2), Modifier.padding(24.dp), style = MaterialTheme.typography.displayMedium)
+            Surface(Modifier.padding(12.dp), shape = RoundedCornerShape(12.dp), color = colors.surface.copy(alpha = .96f)) {
+                Text(status, Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (days != null && days < 0) WishPlayThemeColors.success else colors.primary)
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // When badge
-            val badgeShape = RoundedCornerShape(10.dp)
-            Box(
-                modifier = Modifier
-                    .clip(badgeShape)
-                    .background(badgeBg)
-                    .then(
-                        if (isDashed) Modifier.border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline), badgeShape)
-                        else Modifier
-                    )
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = whenText,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = badgeTextColor
-                )
-            }
+        }
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(game.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                maxLines = 2, minLines = if (wide) 1 else 2, overflow = TextOverflow.Ellipsis)
+            Text(game.platforms.keys.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
-
-private data class Tuple4<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)

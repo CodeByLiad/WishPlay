@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 data class GameSearchPage(
     val games: List<GameDto>,
     val hasMore: Boolean = false,
-    val warnings: List<String> = emptyList()
+    val warnings: List<String> = emptyList(),
+    val isComplete: Boolean = true
 )
 
 @Serializable

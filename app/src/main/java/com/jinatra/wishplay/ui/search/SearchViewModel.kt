@@ -110,7 +110,7 @@ class SearchViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _query
-                .debounce(300)
+                .debounce(180)
                 .distinctUntilChanged()
                 .collect { q ->
                     performSearch(q, _selectedPlatform.value)
@@ -119,18 +119,16 @@ class SearchViewModel @Inject constructor(
     }
 
     fun onQueryChanged(newQuery: String) {
-        if (_query.value == newQuery) {
-            performSearch(newQuery, _selectedPlatform.value)
-            return
-        }
+        if (_query.value == newQuery) return
         generation++
         searchJob?.cancel()
         otherJob?.cancel()
-        _results.value = emptyList()
+        val cached = searchRepository.cachedSearchPage(newQuery, _selectedPlatform.value, 1)
+        _results.value = cached?.games.orEmpty()
         _otherResults.value = emptyList()
         _otherLoading.value = false
-        _pageState.value = false to null
-        _isLoading.value = true
+        _pageState.value = (cached?.hasMore == true) to null
+        _isLoading.value = cached == null
         _query.value = newQuery
     }
 
@@ -247,25 +245,27 @@ class SearchViewModel @Inject constructor(
             // for page 1 and nothing would tell the user the section had been dropped.
             otherJob?.cancel()
             loadedPage = 0
-            _results.value = emptyList()
+            _results.value = searchRepository.cachedSearchPage(q, plat, 1)?.games.orEmpty()
             _otherResults.value = emptyList()
             _otherLoading.value = false
             _sourceNotice.value = null
         }
         searchJob = viewModelScope.launch {
-            _isLoading.value = true
+            _isLoading.value = page > 1 || _results.value.isEmpty()
             _pageState.value = _pageState.value.first to null
             try {
-                val result = kotlinx.coroutines.withTimeout(12000) { searchRepository.searchGamesPage(q, plat, page) }
-                if (requestGeneration == generation) {
-                    val merged = (if (page == 1) result.games else _results.value + result.games).distinctBy { it.id }
-                    _results.value = merged
-                    loadedPage = page
-                    _pageState.value = result.hasMore to null
-                    if (page == 1 || result.warnings.isNotEmpty()) {
-                        _sourceNotice.value = result.warnings.takeIf { it.isNotEmpty() }?.joinToString(" ")
+                kotlinx.coroutines.withTimeout(12000) {
+                    searchRepository.searchGamesUpdates(q, plat, page).collect { result ->
+                        if (requestGeneration == generation) {
+                            val merged = (if (page == 1) result.games else _results.value + result.games).distinctBy { it.id }
+                            _results.value = merged
+                            loadedPage = page
+                            _pageState.value = result.hasMore to null
+                            _sourceNotice.value = result.warnings.takeIf { it.isNotEmpty() }?.joinToString(" ")
+                            _isLoading.value = false
+                            if (page == 1 && result.isComplete) loadOtherPlatforms(q, plat, merged, requestGeneration)
+                        }
                     }
-                    if (page == 1) loadOtherPlatforms(q, plat, merged, requestGeneration)
                 }
             } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
                 if (requestGeneration == generation) _pageState.value = _pageState.value.first to

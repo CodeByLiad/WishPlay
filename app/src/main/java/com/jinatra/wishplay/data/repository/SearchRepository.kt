@@ -9,6 +9,7 @@ import com.jinatra.wishplay.domain.model.GamePrice
 import com.jinatra.wishplay.domain.model.RequirementsLevel
 import com.jinatra.wishplay.domain.model.SystemRequirements
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -16,7 +17,8 @@ import javax.inject.Singleton
 data class SearchPageResult(
     val games: List<Game>,
     val hasMore: Boolean,
-    val warnings: List<String>
+    val warnings: List<String>,
+    val isComplete: Boolean = true
 )
 
 @Singleton
@@ -63,6 +65,16 @@ class SearchRepository @Inject constructor(
             warnings = response.warnings
         )
     }
+
+    fun cachedSearchPage(query: String, platform: String, page: Int): SearchPageResult? =
+        apiService.cachedSearchPage(query, platform, page)?.let {
+            SearchPageResult(it.games.map { dto -> dto.toDomainModel() }, it.hasMore, it.warnings, it.isComplete)
+        }
+
+    fun searchGamesUpdates(query: String, platform: String, page: Int): Flow<SearchPageResult> =
+        apiService.searchGamesUpdates(query, platform, page).map {
+            SearchPageResult(it.games.map { dto -> dto.toDomainModel() }, it.hasMore, it.warnings, it.isComplete)
+        }
 
     /**
      * Games the platform filter excluded. Issued separately from [searchGamesPage] so a slow

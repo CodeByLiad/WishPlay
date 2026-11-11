@@ -206,7 +206,7 @@ fun WishlistScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "${sortedGames.size} shown",
+                                text = "${sortedGames.size} games",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -261,20 +261,14 @@ fun WishlistScreen(
                                 }
                             }
 
-                            itemsIndexed(group.games, key = { _, game -> game.id }) { index, game ->
-                                val position = when {
-                                    group.games.size == 1 -> GroupPosition.ONLY
-                                    index == 0 -> GroupPosition.FIRST
-                                    index == group.games.lastIndex -> GroupPosition.LAST
-                                    else -> GroupPosition.MIDDLE
-                                }
-
-                                Box(modifier = Modifier.padding(horizontal = 16.dp, vertical = 1.5.dp)) {
-                                    GameRow(
-                                        game = game,
-                                        position = position,
-                                        onClick = { onNavigateToDetails(game.id) }
-                                    )
+                            itemsIndexed(group.games.chunked(2), key = { _, pair -> pair.first().id }) { _, pair ->
+                                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    pair.forEach { game ->
+                                        GameRow(game = game, position = GroupPosition.ONLY,
+                                            onClick = { onNavigateToDetails(game.id) },
+                                            modifier = Modifier.weight(1f), wide = pair.size == 1)
+                                    }
                                 }
                             }
                         }

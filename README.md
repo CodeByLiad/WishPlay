@@ -14,7 +14,7 @@ WishPlay is an offline-first native Android game wishlist and release tracking a
 
 ## Download
 
-[Download WishPlay 1.2.2 for Android](https://github.com/CodeByLiad/WishPlay/releases/download/v1.2.2/WishPlay-1.2.2-Jinatra.apk) · [Release notes and checksum](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.2.2)
+[Download WishPlay 1.3.0 for Android](https://github.com/CodeByLiad/WishPlay/releases/download/v1.3.0/WishPlay-1.3.0-Jinatra.apk) · [Release notes and checksum](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.3.0)
 
 Requires Android 8.0 or later. Every feature is free. Optional bKash donations: **01978900129**.
 
@@ -22,6 +22,8 @@ Requires Android 8.0 or later. Every feature is free. Optional bKash donations: 
 
 ## ✨ Features
 
+- **Responsive Search:** Working providers appear immediately, recent searches are cached, stale results refresh in the background, and superseded requests cancel. Google Play featured results are included and exact matches rank first.
+- **PC Requirements:** Steam minimum/recommended specifications and storage sizes are shown when provided, with honest unavailable states and direct store links.
 - **Multi-Platform Tracking:** Follow games across PC (Steam), PS5, Xbox Series X/S, Nintendo Switch / Switch 2, Android, and iOS with independent release dates per platform.
 - **Offline-First & Encrypted:** Complete local functionality using Room encrypted with **SQLCipher** (256-bit AES-GCM key backed by Android Keystore).
 - **Custom Games:** Add any unannounced or indie game that isn't in public databases yet with custom dates and notes.
@@ -32,7 +34,7 @@ Requires Android 8.0 or later. Every feature is free. Optional bKash donations: 
   - 4 distinct Android notification channels with reboot persistence (`BootReceiver`).
 - **Cloud Sync & Accounts:** Seamless Google Sign-In through Android Credential Manager. Local guest wishlists automatically merge on first sign-in.
 - **Home-Screen Widget:** Interactive Jetpack Glance widget displaying the next upcoming release and a live countdown badge.
-- **Material 3 Expressive UI:** Curated color schemes, fluid springs, custom cookie-shaped artwork containers (`C4`, `C6`, `C9`, `C12`, `SQ`), and light/dark/system theme support.
+- **Material 3 Expressive UI:** Native Expressive theme, motion, Material shapes and animated buttons, morphing loading indicator, segmented controls, and readable switches. Four complete palettes work across backgrounds, cards, navigation, and controls in light/dark/system mode. The wishlist leads with game artwork, and Settings puts appearance first. See [the design system and Mobbin references](Docs/Design_System.md).
 - **Completely Free:**
   - Unlimited wishlist and imports, with no paid game-count cap.
   - All accent themes, widgets, cloud sync, and supported price-drop alerts are free.
@@ -42,6 +44,17 @@ Requires Android 8.0 or later. Every feature is free. Optional bKash donations: 
 
 ---
 
+## Interface
+
+<p>
+  <img src="Docs/screenshots/1.3.0/library.png" width="240" alt="WishPlay artwork library" />
+  <img src="Docs/screenshots/1.3.0/settings.png" width="240" alt="Teal appearance and grouped settings" />
+  <img src="Docs/screenshots/1.3.0/requirements.png" width="240" alt="Steam PC requirements and storage" />
+</p>
+
+Screens captured from the running Android app. [Verification details and limits](Docs/Release_Verification.md).
+
+---
 ## 🛠 Tech Stack & Architecture
 
 - **Language:** Kotlin 2.1.10
@@ -85,7 +98,7 @@ cd WishPlay
 The compiled release APK will be generated at:
 `app/build/outputs/apk/release/app-release.apk`
 
-Version 1.2.2 uses the Android application ID `com.jinatra.wishplay` and the Jinatra signing certificate in `keystore/wishplay-jinatra-release.jks`. Configure signing credentials in the untracked `local.properties`; keep the original keystore for earlier releases. Version 1.2.2 updates the Jinatra 1.0.1/1.1.0 releases in place. Older builds with a different application ID install separately and do not share local data. Firebase is registered for this package and its signing certificates; `node scripts/register-android-app.cjs --apply` refreshes that registration using the existing local service account. Run `node scripts/verify-catalog.cjs` for live platform search, artwork, and pagination checks.
+Version 1.3.0 uses the Android application ID `com.jinatra.wishplay` and the Jinatra signing certificate in `keystore/wishplay-jinatra-release.jks`. Configure signing credentials in the untracked `local.properties`; keep the original keystore for earlier releases. Version 1.3.0 updates the Jinatra 1.0.1/1.1.0 releases in place. Older builds with a different application ID install separately and do not share local data. Firebase is registered for this package and its signing certificates; `node scripts/register-android-app.cjs --apply` refreshes that registration using the existing local service account. Run `node scripts/verify-catalog.cjs` for live platform search, artwork, and pagination checks.
 
 ---
 

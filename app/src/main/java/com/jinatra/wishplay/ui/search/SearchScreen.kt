@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.jinatra.wishplay.ui.search
 
 import androidx.compose.animation.AnimatedVisibility
@@ -46,6 +47,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -82,6 +89,12 @@ fun SearchScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val uriHandler = LocalUriHandler.current
+    // Text edits must be reflected synchronously. Feeding the field through the combined
+    // asynchronous results state can replay an older value and drop fast IME keystrokes.
+    val inputState = rememberTextFieldState(initialText = uiState.query)
+    LaunchedEffect(inputState) {
+        snapshotFlow { inputState.text.toString() }.distinctUntilChanged().collect(viewModel::onQueryChanged)
+    }
 
     LaunchedEffect(uiState.snackbarMessage) {
         uiState.snackbarMessage?.let {
@@ -119,76 +132,22 @@ fun SearchScreen(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
 
-            // Search Bar (Prototype .searchbar: height 58dp, radius 29dp, background var(--sch))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp)
-                    .height(58.dp)
-                    .clip(RoundedCornerShape(29.dp))
-                    .background(customColors.surfaceContainerHigh)
-                    .padding(start = 18.dp, end = 6.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    BasicTextField(
-                        value = uiState.query,
-                        onValueChange = viewModel::onQueryChanged,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 12.dp),
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            fontFamily = BodyFontFamily,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(
-                            onSearch = {
-                                viewModel.onSubmitSearch()
-                                keyboardController?.hide()
-                            }
-                        ),
-                        decorationBox = { innerTextField ->
-                            if (uiState.query.isEmpty()) {
-                                Text(
-                                    text = "Search any game",
-                                    fontFamily = BodyFontFamily,
-                                    fontSize = 16.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            innerTextField()
-                        }
-                    )
-                    if (uiState.query.isNotEmpty()) {
-                        IconButton(
-                            onClick = viewModel::onClearQuery,
-                            modifier = Modifier.size(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Clear search",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-            }
+            androidx.compose.material3.TextField(
+                state = inputState,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                shape = MaterialTheme.shapes.extraLarge, lineLimits = TextFieldLineLimits.SingleLine,
+                placeholder = { Text("Search games") },
+                leadingIcon = { Icon(Icons.Default.Search, null) },
+                trailingIcon = if (inputState.text.isNotEmpty()) {
+                    { IconButton(onClick = { inputState.clearText() }) { Icon(Icons.Default.Close, "Clear search") } }
+                } else null,
+                colors = androidx.compose.material3.TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search, autoCorrectEnabled = false),
+                onKeyboardAction = { viewModel.onSubmitSearch(); keyboardController?.hide() }
+            )
 
             // Platform Filter Chips
             Row(
@@ -261,7 +220,7 @@ fun SearchScreen(
                                     uiState.recentSearches.forEach { r ->
                                         RecentSearchChip(
                                             query = r,
-                                            onSelect = { viewModel.onSelectRecent(r) },
+                                            onSelect = { inputState.setTextAndPlaceCursorAtEnd(r); viewModel.onSelectRecent(r) },
                                             onRemove = { viewModel.onRemoveRecent(r) }
                                         )
                                     }
@@ -291,7 +250,7 @@ fun SearchScreen(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(16.dp))
                                             .background(customColors.surfaceContainerHigh)
-                                            .clickable { viewModel.onSelectRecent(p) }
+                                            .clickable { inputState.setTextAndPlaceCursorAtEnd(p); viewModel.onSelectRecent(p) }
                                             .padding(horizontal = 12.dp, vertical = 8.dp)
                                     ) {
                                         Row(
@@ -345,10 +304,8 @@ fun SearchScreen(
                                 .padding(vertical = 24.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(
-                                color = customColors.accent,
-                                modifier = Modifier.size(32.dp)
-                            )
+                            androidx.compose.material3.LoadingIndicator(
+                                color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(52.dp))
                         }
                     }
                 }
@@ -567,9 +524,9 @@ fun SearchResultRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(customColors.surfaceContainer)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -579,7 +536,7 @@ fun SearchResultRow(
                 title = game.title,
                 hue = gameColor,
                 shapeType = CookieShapeType.fromKey(game.shapeKey),
-                size = 48.dp,
+                size = 76.dp,
                 imageUrl = game.logoUrl ?: game.coverUrl, fallbackImageUrl = game.coverUrl
             )
 
@@ -597,7 +554,7 @@ fun SearchResultRow(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = if (game.platforms.values.all { it == null }) "$platformsText\nSee details for release dates"
+                    text = if (game.platforms.values.all { it == null }) platformsText
                         else if (selectedPlatform == "All") "$platformsText\nRelease: $releaseLabel" else "$selectedPlatform · $releaseLabel",
                     fontFamily = BodyFontFamily,
                     fontSize = 13.sp,
@@ -616,7 +573,7 @@ fun SearchResultRow(
                     .clip(RoundedCornerShape(buttonCornerRadius))
                     .background(
                         if (game.inWishlist) MaterialTheme.colorScheme.secondaryContainer
-                        else customColors.accent
+                        else MaterialTheme.colorScheme.secondaryContainer
                     )
                     .clickable(
                         enabled = !isUpdating,
@@ -632,7 +589,7 @@ fun SearchResultRow(
                     imageVector = if (game.inWishlist) Icons.Default.Check else Icons.Default.Add,
                     contentDescription = if (game.inWishlist) "Remove ${game.title} from wishlist" else "Add ${game.title} to wishlist",
                     tint = if (game.inWishlist) MaterialTheme.colorScheme.onSecondaryContainer
-                    else customColors.onAccent,
+                    else MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.size(22.dp)
                 )
                 }

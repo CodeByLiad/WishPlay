@@ -54,6 +54,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -133,12 +134,22 @@ fun ProfileScreen(
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            Text("Settings", style = MaterialTheme.typography.headlineLarge)
             // Header / Tabhead
             ProfileHeader(
                 name = uiState.user.name,
                 email = uiState.user.email,
                 initials = uiState.user.initials,
                 isGuest = uiState.user.isGuest,
+            )
+
+
+            // Look and Feel Section
+            LookAndFeelSection(
+                selectedTheme = uiState.themeMode,
+                onSelectTheme = { viewModel.setTheme(it) },
+                selectedAccent = uiState.accentColor,
+                onSelectAccent = viewModel::setAccent
             )
 
             WishlistBackupSection(viewModel)
@@ -150,15 +161,6 @@ fun ProfileScreen(
                 )
             }
 
-            DonationSection()
-
-            // Look and Feel Section
-            LookAndFeelSection(
-                selectedTheme = uiState.themeMode,
-                onSelectTheme = { viewModel.setTheme(it) },
-                selectedAccent = uiState.accentColor,
-                onSelectAccent = viewModel::setAccent
-            )
 
             // Home Screen Widget Section
             WidgetPreviewSection(
@@ -207,6 +209,7 @@ fun ProfileScreen(
                 )
             }
 
+            DonationSection()
             Spacer(modifier = Modifier.height(32.dp))
         }
 
@@ -285,14 +288,16 @@ private fun ProfileHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
+            .clip(RoundedCornerShape(28.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Avatar cookie wrapper
         Box(
             modifier = Modifier
-                .size(76.dp)
+                .size(56.dp)
                 .clip(CookieShape(CookieShapeType.C12))
                 .background(MaterialTheme.colorScheme.secondaryContainer),
             contentAlignment = Alignment.Center
@@ -321,7 +326,7 @@ private fun ProfileHeader(
                 text = name,
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.ExtraBold,
-                    fontSize = 24.sp
+                    fontSize = 22.sp
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -406,107 +411,40 @@ private fun GuestBanner(
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun LookAndFeelSection(
-    selectedTheme: String,
-    onSelectTheme: (String) -> Unit,
-    selectedAccent: String,
-    onSelectAccent: (String) -> Unit,
-) {
-    val customColors = WishPlayThemeColors
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = "Look and feel",
-            style = MaterialTheme.typography.titleMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        // Segmented theme control
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(customColors.surfaceContainer)
-                .padding(4.dp)
-        ) {
-            listOf("light" to "Light", "dark" to "Dark", "system" to "System").forEach { (key, label) ->
-                val isSelected = selectedTheme == key
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
-                        .clickable { onSelectTheme(key) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = label,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp
-                    )
+private fun LookAndFeelSection(selectedTheme: String, onSelectTheme: (String) -> Unit,
+    selectedAccent: String, onSelectAccent: (String) -> Unit) {
+    androidx.compose.material3.Card(shape = RoundedCornerShape(28.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Text("Look and feel", style = MaterialTheme.typography.titleLarge)
+            Text("Make WishPlay yours", style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val modes = listOf("light" to "Light", "dark" to "Dark", "system" to "System")
+            androidx.compose.material3.SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                modes.forEachIndexed { index, (key, label) ->
+                    SegmentedButton(selected = selectedTheme == key,
+                        onClick = { onSelectTheme(key) },
+                        shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, modes.size)) { Text(label) }
                 }
             }
-        }
-
-        // Accent color row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Accent color",
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-
-        }
-
-        // Swatches
-        val accents = listOf(
-            "gold" to Color(0xFFFFB938),
-            "violet" to Color(0xFFB9A8FF),
-            "teal" to Color(0xFF6ED6C4),
-            "coral" to Color(0xFFFF9E8A)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            accents.forEach { (key, color) ->
-                val isSelected = selectedAccent == key
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(color)
-                        .semantics { contentDescription = "${key.replaceFirstChar { it.uppercase() }} accent"; selected = isSelected }
-                        .clickable { onSelectAccent(key) }
-                        .then(
-                            if (isSelected) BorderStroke(3.dp, MaterialTheme.colorScheme.onSurface).let {
-                                Modifier.border(it, CircleShape)
-                            } else Modifier
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isSelected) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = Color(0xFF16132E),
-                            modifier = Modifier.size(20.dp)
-                        )
+            Text("Accent color", style = MaterialTheme.typography.labelLarge)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.jinatra.wishplay.ui.theme.AccentColor.entries.forEach { accent ->
+                    val key = accent.name.lowercase()
+                    val selected = selectedAccent.equals(key, true)
+                    Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp))
+                        .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface)
+                        .semantics { contentDescription = "${accent.label} accent"; this.selected = selected }
+                        .clickable { onSelectAccent(key) }.padding(vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(Modifier.size(36.dp).clip(if (selected) CookieShape(CookieShapeType.C12) else CircleShape)
+                            .background(accent.color), contentAlignment = Alignment.Center) {
+                            if (selected) Icon(Icons.Default.Check, null, tint = accent.onColor, modifier = Modifier.size(20.dp))
+                        }
+                        Text(accent.label, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }
@@ -515,129 +453,18 @@ private fun LookAndFeelSection(
 }
 
 @Composable
-private fun WidgetPreviewSection(
-    nextDropGame: Game?,
-) {
-    val customColors = WishPlayThemeColors
-
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Home screen widget",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-
-        }
-
-        // Widget Preview Card matching user's real next drop game
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(24.dp))
-                .background(customColors.surfaceContainer)
-                .padding(18.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                if (nextDropGame != null) {
-                    val gameColor = try {
-                        Color(android.graphics.Color.parseColor(nextDropGame.hueHex))
-                    } catch (_: Exception) {
-                        Color(0xFF1F7A6E)
-                    }
-                    val days = nextDropGame.daysUntilRelease()
-                    val whenLabel = when {
-                        days == null -> "Date TBA"
-                        days == 0 -> "Out today"
-                        days == 1 -> "Out tomorrow"
-                        days > 1 -> "Out in $days days"
-                        else -> "Out now"
-                    }
-
-                    GameLogo(
-                        title = nextDropGame.title,
-                        hue = gameColor,
-                        shapeType = CookieShapeType.fromKey(nextDropGame.shapeKey),
-                        size = 48.dp,
-                        imageUrl = nextDropGame.logoUrl ?: nextDropGame.coverUrl, fallbackImageUrl = nextDropGame.coverUrl
-                    )
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = nextDropGame.title,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 17.sp,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1
-                        )
-                        Text(
-                            text = whenLabel,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Text(
-                        text = days?.toString() ?: "—",
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 38.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CookieShape(CookieShapeType.C9))
-                            .background(customColors.accent),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            tint = customColors.onAccent
-                        )
-                    }
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Next drop preview",
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 17.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Add games to track releases",
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Text(
-                        text = "—",
-                        style = MaterialTheme.typography.displayMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 38.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
+private fun WidgetPreviewSection(nextDropGame: Game?) {
+    val context = LocalContext.current
+    androidx.compose.material3.Card(shape = RoundedCornerShape(24.dp),
+        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+        ProfileListItem(icon = Icons.Default.PhoneAndroid, title = "Home screen widget",
+            subtitle = nextDropGame?.let { "Next up: ${it.title}" } ?: "Keep your next release on your home screen",
+            onClick = {
+                val manager = android.appwidget.AppWidgetManager.getInstance(context)
+                if (manager.isRequestPinAppWidgetSupported) manager.requestPinAppWidget(
+                    android.content.ComponentName(context, com.jinatra.wishplay.widget.NextDropWidgetReceiver::class.java), null, null)
+                else android.widget.Toast.makeText(context, "Touch and hold your home screen, then choose Widgets and WishPlay.", android.widget.Toast.LENGTH_LONG).show()
+            })
     }
 }
 

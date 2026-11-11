@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.jinatra.wishplay.ui.alerts
 
 import android.content.Intent
@@ -37,7 +38,10 @@ import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
+import com.jinatra.wishplay.ui.components.WishPlaySwitch as Switch
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -379,8 +383,9 @@ fun AlertsScreen(
                     }
                     Switch(
                         checked = uiState.alertRelease,
+                        modifier = Modifier.semantics { contentDescription = "Release day notifications" },
                         onCheckedChange = { viewModel.onToggleRelease(it) },
-                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
+                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary, checkedIconColor = MaterialTheme.colorScheme.primary)
                     )
                 }
             }
@@ -408,39 +413,19 @@ fun AlertsScreen(
                         }
                         Switch(
                             checked = uiState.alertCountdown,
+                        modifier = Modifier.semantics { contentDescription = "Countdown notifications" },
                             onCheckedChange = { viewModel.onToggleCountdown(it) },
-                            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
+                            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary, checkedIconColor = MaterialTheme.colorScheme.primary)
                         )
                     }
 
                     // 3-way Segmented Lead Selector
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(WishPlayThemeColors.surfaceContainerHigh)
-                            .padding(4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        listOf("1 day", "3 days", "1 week").forEach { lead ->
-                            val isSelected = uiState.alertLead == lead
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (isSelected) MaterialTheme.colorScheme.surface else Color.Transparent)
-                                    .clickable(enabled = uiState.alertCountdown) {
-                                        viewModel.onSelectLead(lead)
-                                    }
-                                    .padding(vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "$lead before",
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                    androidx.compose.material3.SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                        listOf("1 day", "3 days", "1 week").forEachIndexed { index, lead ->
+                            SegmentedButton(selected = uiState.alertLead == lead, enabled = uiState.alertCountdown,
+                                onClick = { viewModel.onSelectLead(lead) },
+                                shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, 3)) {
+                                Text("$lead before", style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }
@@ -469,8 +454,9 @@ fun AlertsScreen(
                     }
                     Switch(
                         checked = uiState.alertChanges,
+                        modifier = Modifier.semantics { contentDescription = "Date change notifications" },
                         onCheckedChange = { viewModel.onToggleChanges(it) },
-                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
+                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary, checkedIconColor = MaterialTheme.colorScheme.primary)
                     )
                 }
             }
@@ -500,8 +486,9 @@ fun AlertsScreen(
                     }
                     Switch(
                         checked = uiState.alertPrice,
+                        modifier = Modifier.semantics { contentDescription = "Price drop notifications" },
                         onCheckedChange = viewModel::onTogglePrice,
-                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
+                        colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary, checkedIconColor = MaterialTheme.colorScheme.primary)
                     )
                 }
             }

@@ -2,6 +2,7 @@ package com.jinatra.wishplay.data.remote.api
 
 import com.jinatra.wishplay.data.remote.dto.GameDto
 import com.jinatra.wishplay.domain.model.ReleaseEvidence
+import com.jinatra.wishplay.domain.model.catalogTitleKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -24,14 +25,29 @@ internal class GooglePlayCatalog(client: OkHttpClient) {
 
     suspend fun search(query: String): List<GameDto> = withContext(Dispatchers.IO) {
         val term = URLEncoder.encode(query.trim().ifBlank { "games" }, "UTF-8")
-        parseSearch(client.catalogText("https://play.google.com/store/search?q=$term&c=apps&hl=en&gl=US"))
+        parseSearch(client.catalogText("https://play.google.com/store/search?q=$term&c=apps&hl=en&gl=US"), query)
     }
 
-    internal fun parseSearch(html: String): List<GameDto> {
+    internal fun parseSearch(html: String, query: String = ""): List<GameDto> {
         val result = linkedMapOf<String, GameDto>()
         var parsedPayload = false
         fun visit(node: JSONArray, depth: Int) {
-            if (depth > 70 || result.size >= 40) return
+            if (depth > 70) return
+            // Play renders an exact/featured match as a full app record, rather than
+            // the compact records used by the recommendation list below it.
+            val featured = node.optJSONArray(2)
+            val featuredPackage = node.optJSONObject(3)?.optJSONArray("12")?.optJSONArray(0)?.optString(0).orEmpty()
+            if (featured != null && packagePattern.matches(featuredPackage)) {
+                val name = featured.optJSONArray(0)?.optString(0).orEmpty()
+                val category = featured.optJSONArray(79)?.optJSONArray(0)?.optJSONArray(0)?.optString(2).orEmpty()
+                val image = featured.optJSONArray(95)?.optJSONArray(0)?.optJSONArray(3)?.optString(2)
+                if (name.isNotBlank() && category.startsWith("GAME_") &&
+                    image?.startsWith("https://play-lh.googleusercontent.com/") == true) {
+                    val dto = game(featuredPackage, name, image).copy(
+                        developer = featured.optJSONArray(68)?.optString(0))
+                    result.putIfAbsent(dto.id, dto)
+                }
+            }
             val pkg = node.optJSONArray(0)?.optString(0).orEmpty()
             val title = node.opt(3) as? String
             val genre = node.opt(5) as? String
@@ -49,7 +65,17 @@ internal class GooglePlayCatalog(client: OkHttpClient) {
             if (payload != null) { parsedPayload = true; visit(payload, 0) }
         }
         if (!parsedPayload) throw IOException("Google Play catalog could not be read")
-        return result.values.toList()
+        val key = catalogTitleKey(query).replace(" ", "")
+        return result.values.sortedBy { game ->
+            val title = catalogTitleKey(game.title).replace(" ", "")
+            when {
+                key.isBlank() -> 0
+                title == key -> 0
+                title.startsWith(key) -> 1
+                title.contains(key) -> 2
+                else -> 3
+            }
+        }.take(40)
     }
 
     suspend fun details(id: String): GameDto? = withContext(Dispatchers.IO) {

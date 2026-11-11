@@ -1,9 +1,9 @@
 {
-  "versionCode": 6,
-  "versionName": "1.2.2",
-  "apkUrl": "https://github.com/CodeByLiad/WishPlay/releases/download/v1.2.2/WishPlay-1.2.2-Jinatra.apk",
-  "sha256": "95d4cb1b3ed043b72d8a055c8243936c093ec43120fd1f29e4f0202ed2452bed",
+  "versionCode": 7,
+  "versionName": "1.3.0",
+  "apkUrl": "https://github.com/CodeByLiad/WishPlay/releases/download/v1.3.0/WishPlay-1.3.0-Jinatra.apk",
+  "sha256": "aada1a58204845e586af06922fc4994012b4d4ba419909bf585a49b53f76bd29",
   "minSupportedVersionCode": 1,
-  "releaseNotes": "Fixes Android search with Google Play results and bounded loading. Adds platform icons and real notification permission setup. Every feature is free; install over the existing app to retain your wishlist.",
-  "publishedAt": "2026-11-11T07:22:29Z"
+  "releaseNotes": "Material Expressive redesign with complete palettes, readable switches, artwork library, and real Steam requirements. Fixes missing featured games including Offroad League Online. Search shows each source immediately and caches recent queries. Every feature remains free.",
+  "publishedAt": "2026-11-11T12:22:06Z"
 }

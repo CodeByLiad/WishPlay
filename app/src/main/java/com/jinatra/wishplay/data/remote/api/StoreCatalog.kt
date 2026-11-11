@@ -7,6 +7,9 @@ import okhttp3.OkHttpClient
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.time.OffsetDateTime
+import android.text.Html
+import com.jinatra.wishplay.data.remote.dto.RequirementsLevelDto
+import com.jinatra.wishplay.data.remote.dto.SystemRequirementsDto
 
 /** Public store catalogs. Store identifiers are kept separate from RAWG identifiers. */
 internal class StoreCatalog(client: OkHttpClient) {
@@ -59,12 +62,31 @@ internal class StoreCatalog(client: OkHttpClient) {
         val data = response.getJSONObject("data")
         if (data.optString("type") != "game") return null
         val date = storeReleaseDate(data.optJSONObject("release_date")?.optString("date"))
+        val pc = data.optJSONObject("pc_requirements")
+        val minimum = parseRequirements(pc?.optString("minimum").orEmpty())
+        val recommended = parseRequirements(pc?.optString("recommended").orEmpty())
         return GameDto(id = "steam_$id", title = data.getString("name"),
             developer = data.optJSONArray("developers")?.optString(0),
             coverUrl = data.optString("header_image").takeIf { it.startsWith("https://") },
             about = data.optString("short_description").replace(Regex("<[^>]*>"), " "),
+            requirements = if (minimum.first != null || recommended.first != null)
+                SystemRequirementsDto(minimum.first, recommended.first) else null,
+            storageSizes = mapOf("PC" to (recommended.second ?: minimum.second)),
             platforms = mapOf("PC" to date),
             releaseEvidence = mapOf("PC" to listOf(ReleaseEvidence("Steam (US)", date, "https://store.steampowered.com/app/$id/"))))
+    }
+
+    /** Store HTML contains labelled list items, sometimes with nested markup and entities. */
+    internal fun parseRequirements(html: String): Pair<RequirementsLevelDto?, String?> {
+        val text = Html.fromHtml(html.replace(Regex("(?i)<br\\s*/?>|</li>"), "\n"), Html.FROM_HTML_MODE_LEGACY)
+            .toString().replace('\u00a0', ' ')
+        fun field(vararg names: String): String? {
+            val labels = "OS|Processor|Memory|Graphics|Storage|DirectX|Sound Card|Additional Notes|Network|Minimum|Recommended"
+            val pattern = Regex("(?is)(?:^|\\n)\\s*(?:${names.joinToString("|") { Regex.escape(it) }})\\s*\\*?\\s*:\\s*(.*?)(?=\\n\\s*(?:$labels)\\s*\\*?\\s*:|$)")
+            return pattern.find(text)?.groupValues?.get(1)?.replace(Regex("\\s+"), " ")?.trim()?.takeIf { it.isNotBlank() }
+        }
+        val level = RequirementsLevelDto(field("OS"), field("Processor"), field("Graphics"), field("Memory"))
+        return level.takeIf { listOf(it.os, it.cpu, it.gpu, it.ram).any { value -> value != null } } to field("Storage")
     }
 
     suspend fun searchApple(query: String): List<GameDto> {

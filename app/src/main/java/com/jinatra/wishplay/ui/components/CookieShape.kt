@@ -1,5 +1,6 @@
 package com.jinatra.wishplay.ui.components
 
+import androidx.compose.material3.toShape
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
@@ -34,50 +35,15 @@ enum class CookieShapeType(val lobes: Int, val amplitude: Float) {
     }
 }
 
-class CookieShape(val type: CookieShapeType) : Shape {
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density
-    ): Outline {
-        val path = Path()
-        val width = size.width
-        val height = size.height
-        val minDim = min(width, height)
-
-        if (type == CookieShapeType.SQUIRCLE) {
-            val cornerRadius = minDim * 0.28f
-            path.addRoundRect(
-                RoundRect(
-                    left = 0f,
-                    top = 0f,
-                    right = width,
-                    bottom = height,
-                    cornerRadius = CornerRadius(cornerRadius, cornerRadius)
-                )
-            )
-            return Outline.Generic(path)
-        }
-
-        val centerX = width / 2f
-        val centerY = height / 2f
-        val baseRadius = minDim / 2f
-        val amp = type.amplitude
-        val n = type.lobes
-
-        for (i in 0..360 step 3) {
-            val theta = (i * PI / 180.0).toFloat()
-            val r = baseRadius * (1f - amp + amp * cos(n * theta))
-            val x = centerX + r * cos(theta)
-            val y = centerY + r * sin(theta)
-
-            if (i == 0) {
-                path.moveTo(x, y)
-            } else {
-                path.lineTo(x, y)
-            }
-        }
-        path.close()
-        return Outline.Generic(path)
-    }
+@OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
+@androidx.compose.runtime.Composable
+fun CookieShape(type: CookieShapeType): Shape {
+    return when (type) {
+        CookieShapeType.C4 -> androidx.compose.material3.MaterialShapes.Cookie4Sided
+        CookieShapeType.C6 -> androidx.compose.material3.MaterialShapes.Cookie6Sided
+        CookieShapeType.C9 -> androidx.compose.material3.MaterialShapes.Cookie9Sided
+        CookieShapeType.C12 -> androidx.compose.material3.MaterialShapes.Cookie12Sided
+        CookieShapeType.CIRCLE -> androidx.compose.material3.MaterialShapes.Circle
+        CookieShapeType.SQUIRCLE -> androidx.compose.material3.MaterialShapes.Square
+    }.toShape()
 }

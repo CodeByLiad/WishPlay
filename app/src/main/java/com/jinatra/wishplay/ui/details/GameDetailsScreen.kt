@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.jinatra.wishplay.ui.details
 
 import android.content.Intent
@@ -40,6 +41,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -422,7 +424,7 @@ fun GameDetailsScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = stringResource(R.string.tba_date),
+                                    text = if (game.id.startsWith("steam_") || game.id.startsWith("play_") || game.id.startsWith("apple_")) "Date unavailable" else stringResource(R.string.tba_date),
                                     fontFamily = DisplayFontFamily,
                                     fontWeight = FontWeight.ExtraBold,
                                     fontSize = 28.sp,
@@ -430,7 +432,7 @@ fun GameDetailsScreen(
                                 )
                                 Text(
                                     text = if (game.expectedYear != null) "Expected in ${game.expectedYear}. We'll alert you the moment a date is set."
-                                    else "We'll alert you the moment a date is set.",
+                                    else "This source has not provided a release date. You can still save this game.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -640,14 +642,14 @@ fun GameDetailsScreen(
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(
-                                    text = "Trailer will be shared later",
+                                    text = "Trailer unavailable from this source",
                                     fontFamily = DisplayFontFamily,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "We'll add it here as soon as the developer posts one.",
+                                    text = "Open the store listing to check available videos.",
                                     fontFamily = BodyFontFamily,
                                     fontSize = 13.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -658,6 +660,15 @@ fun GameDetailsScreen(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+
+                val listingUrl = game.releaseEvidence[uiState.selectedPlatform].orEmpty().firstOrNull()?.url
+                if (listingUrl != null && listingUrl.startsWith("https://")) {
+                    Box(Modifier.padding(horizontal = 20.dp)) {
+                        ExpressiveButton(text = "Open store listing", style = ButtonStyle.TONAL,
+                            onClick = { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(listingUrl))) })
+                    }
+                    Spacer(Modifier.height(24.dp))
+                }
 
                 // 9. About Section
                 if (!game.about.isNullOrBlank()) {
@@ -693,48 +704,10 @@ fun GameDetailsScreen(
 
                     when (activePlatform) {
                         "PC" -> {
-                            // Minimum / Recommended toggle buttons
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(customColors.surfaceContainerHigh)
-                                    .padding(4.dp)
-                            ) {
-                                val isMin = uiState.reqMode == "min"
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(if (isMin) customColors.accent else Color.Transparent)
-                                        .clickable { viewModel.setReqMode("min") }
-                                        .padding(vertical = 8.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "Minimum",
-                                        fontFamily = BodyFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = if (isMin) customColors.onAccent else MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .background(if (!isMin) customColors.accent else Color.Transparent)
-                                        .clickable { viewModel.setReqMode("rec") }
-                                        .padding(vertical = 8.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = "Recommended",
-                                        fontFamily = BodyFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = if (!isMin) customColors.onAccent else MaterialTheme.colorScheme.onSurface
-                                    )
+                            androidx.compose.material3.SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                                listOf("min" to "Minimum", "rec" to "Recommended").forEachIndexed { index, (mode, label) ->
+                                    SegmentedButton(selected = uiState.reqMode == mode, onClick = { viewModel.setReqMode(mode) },
+                                        shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index, 2)) { Text(label) }
                                 }
                             }
 
@@ -770,7 +743,8 @@ fun GameDetailsScreen(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
-                                            text = v ?: "Will be shared later",
+                                            text = v ?: "Not provided by source",
+                                            modifier = Modifier.weight(1f).padding(start = 20.dp),
                                             fontFamily = BodyFontFamily,
                                             fontWeight = if (v != null) FontWeight.Medium else FontWeight.Normal,
                                             fontSize = 14.sp,
@@ -798,7 +772,7 @@ fun GameDetailsScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = "Android 10 or later, 4 GB RAM",
+                                        text = "Check compatibility on Google Play",
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -823,7 +797,7 @@ fun GameDetailsScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = "iOS 16 or later",
+                                        text = "Check compatibility on the App Store",
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
@@ -840,7 +814,7 @@ fun GameDetailsScreen(
                                     .padding(16.dp)
                             ) {
                                 Text(
-                                    text = "Runs on any $activePlatform. No extra hardware needed.",
+                                    text = "Check the $activePlatform store listing for edition and hardware compatibility.",
                                     fontFamily = BodyFontFamily,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -882,7 +856,7 @@ fun GameDetailsScreen(
                             )
                             Column {
                                 Text(
-                                    text = size ?: "Will be shared closer to launch",
+                                    text = size ?: "Storage size unavailable",
                                     fontFamily = DisplayFontFamily,
                                     fontWeight = if (size != null) FontWeight.ExtraBold else FontWeight.Normal,
                                     fontSize = if (size != null) 22.sp else 15.sp,
