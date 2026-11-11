@@ -15,6 +15,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.first
+import android.content.Context
+import android.os.Build
+import dagger.hilt.android.qualifiers.ApplicationContext
+import com.jinatra.wishplay.notifications.NotificationHelper
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -37,7 +42,8 @@ data class WishlistUiState(
 @HiltViewModel
 class WishlistViewModel @Inject constructor(
     private val wishlistRepository: WishlistRepository,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow(FilterOption.ALL)
@@ -98,6 +104,11 @@ class WishlistViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             wishlistRepository.seedInitialDataIfEmpty()
+            val enabled = NotificationHelper.areNotificationsEnabled(context)
+            userPreferences.setNotificationsEnabled(enabled)
+            if (Build.VERSION.SDK_INT >= 33 && !enabled && !userPreferences.notificationsAsked.first()) {
+                _showNotifPrimingSheet.value = true
+            }
         }
     }
 
@@ -133,29 +144,25 @@ class WishlistViewModel @Inject constructor(
     }
 
     fun hideNotifSheet() {
-        _showNotifPrimingSheet.value = false
+        onDenyNotifications()
     }
 
     fun clearSnackbar() {
         _snackbar.value = null
     }
 
-    fun onAllowNotifications() {
+    fun onNotificationPermissionResult(granted: Boolean) {
         viewModelScope.launch {
             userPreferences.setNotificationsAsked(true)
-            userPreferences.setNotificationsEnabled(true)
+            userPreferences.setNotificationsEnabled(granted)
             _showNotifPrimingSheet.value = false
-            _snackbar.value = "Notifications on. You'll hear about releases, delays and reminders."
+            _snackbar.value = if (granted) "Notifications on. You'll hear about releases, delays and reminders."
+                else "Notifications are off. You can enable them in Profile."
         }
     }
 
     fun onDenyNotifications() {
-        viewModelScope.launch {
-            userPreferences.setNotificationsAsked(true)
-            userPreferences.setNotificationsEnabled(false)
-            _showNotifPrimingSheet.value = false
-            _snackbar.value = "No notifications for now. Turn them on any time in Profile."
-        }
+        onNotificationPermissionResult(NotificationHelper.areNotificationsEnabled(context))
     }
 
     fun removeGame(gameId: String) {

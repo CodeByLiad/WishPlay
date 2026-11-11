@@ -225,7 +225,7 @@ class SearchViewModel @Inject constructor(
         _otherLoading.value = true
         otherJob = viewModelScope.launch {
             val others = try {
-                searchRepository.searchOtherPlatforms(q, plat, shown)
+                kotlinx.coroutines.withTimeoutOrNull(6000) { searchRepository.searchOtherPlatforms(q, plat, shown) }.orEmpty()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
@@ -256,7 +256,7 @@ class SearchViewModel @Inject constructor(
             _isLoading.value = true
             _pageState.value = _pageState.value.first to null
             try {
-                val result = searchRepository.searchGamesPage(q, plat, page)
+                val result = kotlinx.coroutines.withTimeout(12000) { searchRepository.searchGamesPage(q, plat, page) }
                 if (requestGeneration == generation) {
                     val merged = (if (page == 1) result.games else _results.value + result.games).distinctBy { it.id }
                     _results.value = merged
@@ -267,6 +267,9 @@ class SearchViewModel @Inject constructor(
                     }
                     if (page == 1) loadOtherPlatforms(q, plat, merged, requestGeneration)
                 }
+            } catch (_: kotlinx.coroutines.TimeoutCancellationException) {
+                if (requestGeneration == generation) _pageState.value = _pageState.value.first to
+                    "Search took too long. Try again or choose another platform."
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {

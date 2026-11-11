@@ -86,7 +86,11 @@ fun WishPlayApp(
     extraGameId: String? = null
 ) {
     val navController = rememberNavController()
-    val startDestination = if (isOnboardingDone) Screen.Main.route else Screen.Welcome.route
+    // Finishing onboarding updates DataStore before navigation. Keep the initial graph stable
+    // so that update cannot create two main entries and interrupt the permission sheet.
+    val startDestination = androidx.compose.runtime.saveable.rememberSaveable {
+        if (isOnboardingDone) Screen.Main.route else Screen.Welcome.route
+    }
 
     androidx.compose.runtime.LaunchedEffect(extraGameId) {
         if (!extraGameId.isNullOrBlank()) {

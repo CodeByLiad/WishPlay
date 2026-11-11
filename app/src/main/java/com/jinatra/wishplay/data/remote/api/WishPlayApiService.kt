@@ -38,39 +38,37 @@ interface WishPlayApiService {
 
 @Singleton
 class WishPlayApiServiceImpl @Inject constructor(
-    private val client: OkHttpClient
+    client: OkHttpClient
 ) : WishPlayApiService {
+
+    private val client = client.newBuilder().callTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
+        .retryOnConnectionFailure(false).build()
+    private val googlePlay = GooglePlayCatalog(this.client)
 
     // RAWG Live Video Game Database API
     private val rawgApiKey = "0daeeb89a3e440e7864d61b5e2a94d26"
     private val rawgBaseUrl = "https://api.rawg.io/api"
     private val stores = StoreCatalog(client)
 
-    /**
-     * The injected client allows 15s to read. RAWG answers a warm query in well under a second
-     * but a cold one has been measured at ~22s, which that budget would cut off. This client
-     * shares the same connection pool, dispatcher and certificate pins, and is used only for the
-     * supplementary cross-platform fetch, which holds up nothing on screen.
-     */
-    private val patientClient: OkHttpClient by lazy {
-        client.newBuilder().readTimeout(35, java.util.concurrent.TimeUnit.SECONDS).build()
-    }
-
     override suspend fun searchGames(query: String, platform: String): List<GameDto> =
         searchGamesPage(query, platform, 1).games
 
     override suspend fun searchGamesPage(query: String, platform: String, page: Int): GameSearchPage = coroutineScope {
-        if (query.trim().length < 2 || page != 1) return@coroutineScope searchRawgPage(query, platform, page)
-        val primary = async { attempt { searchRawgPage(query, platform, page) } }
-        val steam = if (platform in listOf("All", "PC")) async { attempt { stores.searchSteam(query) } } else null
-        val apple = if (platform in listOf("All", "iOS")) async { attempt { stores.searchApple(query) } } else null
+        if (page != 1) return@coroutineScope kotlinx.coroutines.withTimeout(6000) { searchRawgPage(query, platform, page) }
+        // Independent source budgets prevent an unavailable database from hiding working stores.
+        val primary = async { boundedSource(4000) { searchRawgPage(query, platform, page) } }
+        val steam = if (platform in listOf("All", "PC")) async { boundedSource(7000) { stores.searchSteam(query) } } else null
+        val apple = if (platform in listOf("All", "iOS")) async { boundedSource(7000) { stores.searchApple(query) } } else null
+        val play = if (platform in listOf("All", "Android")) async { boundedSource(7000) { googlePlay.search(query) } } else null
         val rawgResult = primary.await()
         val steamResult = steam?.await()
         val appleResult = apple?.await()
-        if (rawgResult.isFailure && steamResult?.isSuccess != true && appleResult?.isSuccess != true) throw rawgResult.exceptionOrNull()!!
+        val playResult = play?.await()
+        if (rawgResult.isFailure && listOf(steamResult, appleResult, playResult).none { it?.isSuccess == true }) {
+            throw IOException("Game providers are unavailable", rawgResult.exceptionOrNull())
+        }
         val base = rawgResult.getOrNull()?.games.orEmpty()
-        // Keep store editions distinct unless RAWG already lists the same title on that platform.
-        val additions = steamResult?.getOrNull().orEmpty() + appleResult?.getOrNull().orEmpty()
+        val additions = steamResult?.getOrNull().orEmpty() + appleResult?.getOrNull().orEmpty() + playResult?.getOrNull().orEmpty()
         val unique = additions.filter { extra -> base.none { existing ->
             catalogTitleKey(existing.title) == catalogTitleKey(extra.title) && existing.platforms.keys.containsAll(extra.platforms.keys)
         } }
@@ -78,13 +76,15 @@ class WishPlayApiServiceImpl @Inject constructor(
             if (rawgResult.isFailure) add("RAWG is unavailable; showing store results.")
             if (steamResult?.isFailure == true) add("Steam is unavailable; other results are still shown.")
             if (appleResult?.isFailure == true) add("App Store is unavailable; other results are still shown.")
+            if (playResult?.isFailure == true) add("Google Play is unavailable; other results are still shown.")
         }
-        GameSearchPage(
-            games = (base + unique).distinctBy { it.id },
-            hasMore = rawgResult.getOrNull()?.hasMore == true,
-            warnings = warnings
-        )
+        GameSearchPage(games = (base + unique).distinctBy { it.id },
+            hasMore = rawgResult.getOrNull()?.hasMore == true, warnings = warnings)
     }
+
+    private suspend fun <T> boundedSource(millis: Long, block: suspend () -> T): Result<T> =
+        kotlinx.coroutines.withTimeoutOrNull(millis) { attempt(block) }
+            ?: Result.failure(IOException("Game provider timed out"))
 
     private suspend fun <T> attempt(block: suspend () -> T): Result<T> = try { Result.success(block()) }
         catch (cancelled: CancellationException) { throw cancelled }
@@ -115,22 +115,15 @@ class WishPlayApiServiceImpl @Inject constructor(
         )
     }
 
-    /**
-     * Second, independent pass for the games a platform filter excluded.
-     *
-     * Deliberately not folded into [searchGamesPage]: RAWG answers a warm query in well under a
-     * second but a cold one has been measured at ~22s, and this result is only ever supplementary.
-     * Fetching it separately means results the user can already act on are never held back, and a
-     * slow pass costs a late section rather than a late screen. It uses [patientClient] because
-     * the shared client's 15s read timeout would cut that cold case off.
-     */
+    /** Supplementary results cannot outlive their bounded request or delay primary results. */
     override suspend fun searchOtherPlatforms(query: String, platform: String, shown: List<GameDto>): List<GameDto> {
         if (query.trim().length < 2 || mapPlatformToRawgId(platform).isEmpty()) return emptyList()
-        val unfiltered = attempt { searchRawgPage(query, "All", 1, patientClient) }.getOrNull() ?: return emptyList()
+        val unfiltered = boundedSource(5000) { searchRawgPage(query, "All", 1) }.getOrNull() ?: return emptyList()
         return selectOtherPlatformGames(primary = shown, candidates = unfiltered.games, selectedPlatform = platform)
     }
 
     override suspend fun getGameDetails(id: String): GameDto? = withContext(Dispatchers.IO) {
+        if (id.startsWith("play_")) return@withContext googlePlay.details(id)
         if (id.startsWith("steam_")) return@withContext id.removePrefix("steam_").toLongOrNull()?.let { stores.steamDetails(it) }
         if (id.startsWith("apple_")) return@withContext id.removePrefix("apple_").toLongOrNull()?.let { stores.appleDetails(it) }
         val rawgId = if (id.startsWith("rawg_")) id.removePrefix("rawg_") else id.toLongOrNull()?.toString()

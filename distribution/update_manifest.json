@@ -1,9 +1,9 @@
 {
-  "versionCode": 5,
-  "versionName": "1.2.1",
-  "apkUrl": "https://github.com/CodeByLiad/WishPlay/releases/download/v1.2.1/WishPlay-1.2.1-Jinatra.apk",
-  "sha256": "7a2c8872cf563006ccd514d0e030c7087e2c2b6b9d9a7b301b46571f994c2f9e",
+  "versionCode": 6,
+  "versionName": "1.2.2",
+  "apkUrl": "https://github.com/CodeByLiad/WishPlay/releases/download/v1.2.2/WishPlay-1.2.2-Jinatra.apk",
+  "sha256": "95d4cb1b3ed043b72d8a055c8243936c093ec43120fd1f29e4f0202ed2452bed",
   "minSupportedVersionCode": 1,
-  "releaseNotes": "Fixes Google sign-in failing with Pin verification failed. Removes stale third-party certificate pins while retaining HTTPS certificate and hostname verification. Install over the existing app to retain your wishlist.",
-  "publishedAt": "2026-11-09T10:19:03Z"
+  "releaseNotes": "Fixes Android search with Google Play results and bounded loading. Adds platform icons and real notification permission setup. Every feature is free; install over the existing app to retain your wishlist.",
+  "publishedAt": "2026-11-11T07:22:29Z"
 }

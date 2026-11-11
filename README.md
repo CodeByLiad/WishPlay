@@ -14,7 +14,7 @@ WishPlay is an offline-first native Android game wishlist and release tracking a
 
 ## Download
 
-[Download WishPlay 1.2.1 for Android](https://github.com/CodeByLiad/WishPlay/releases/download/v1.2.1/WishPlay-1.2.1-Jinatra.apk) · [Release notes and checksum](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.2.1)
+[Download WishPlay 1.2.2 for Android](https://github.com/CodeByLiad/WishPlay/releases/download/v1.2.2/WishPlay-1.2.2-Jinatra.apk) · [Release notes and checksum](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.2.2)
 
 Requires Android 8.0 or later. Every feature is free. Optional bKash donations: **01978900129**.
 
@@ -51,7 +51,7 @@ Requires Android 8.0 or later. Every feature is free. Optional bKash donations: 
 - **Local Storage:** Room Database + SQLCipher + DataStore Preferences
 - **Asynchronous Flow:** Kotlin Coroutines & Flow
 - **Background Scheduling:** Android Jetpack WorkManager
-- **Networking:** OkHttp (Certificate Pinning) + Kotlinx Serialization
+- **Networking:** OkHttp (system TLS verification) + Kotlinx Serialization
 - **Image Loading:** Coil (Disk Cache)
 - **Home Widget:** Jetpack Glance 1.1.1
 - **Auth:** Google Credential Manager + Firebase Auth
@@ -85,13 +85,13 @@ cd WishPlay
 The compiled release APK will be generated at:
 `app/build/outputs/apk/release/app-release.apk`
 
-Version 1.2.1 uses the Android application ID `com.jinatra.wishplay` and the Jinatra signing certificate in `keystore/wishplay-jinatra-release.jks`. Configure signing credentials in the untracked `local.properties`; keep the original keystore for earlier releases. Version 1.2.1 updates the Jinatra 1.0.1/1.1.0 releases in place. Older builds with a different application ID install separately and do not share local data. Firebase is registered for this package and its signing certificates; `node scripts/register-android-app.cjs --apply` refreshes that registration using the existing local service account. Run `node scripts/verify-catalog.cjs` for live platform search, artwork, and pagination checks.
+Version 1.2.2 uses the Android application ID `com.jinatra.wishplay` and the Jinatra signing certificate in `keystore/wishplay-jinatra-release.jks`. Configure signing credentials in the untracked `local.properties`; keep the original keystore for earlier releases. Version 1.2.2 updates the Jinatra 1.0.1/1.1.0 releases in place. Older builds with a different application ID install separately and do not share local data. Firebase is registered for this package and its signing certificates; `node scripts/register-android-app.cjs --apply` refreshes that registration using the existing local service account. Run `node scripts/verify-catalog.cjs` for live platform search, artwork, and pagination checks.
 
 ---
 
 ## 🔒 Security & Privacy
 
-- **Catalog Access:** The client queries RAWG and supported stores directly. The RAWG client key remains bundled; moving it behind a server proxy is tracked in the release verification notes.
+- **Catalog Access:** The client queries RAWG, Google Play (Android), Steam (PC), and App Store (iOS) directly. Store results remain available when RAWG times out; console search still depends on RAWG. Search has bounded provider deadlines and reports failures instead of spinning indefinitely. Google Play uses public listing data whose format can change; no catalog is guaranteed complete. The RAWG client key remains bundled; moving it behind a server proxy is tracked in the release verification notes.
 - **Encrypted Storage:** Room SQLite database encrypted via SQLCipher with keys in the Android Keystore.
 - **No Third-Party Trackers:** Zero ad networks, zero privacy-invasive tracking SDKs.
 - **Backup Exclusions:** Database and token preferences explicitly excluded from cloud backups.

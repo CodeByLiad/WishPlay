@@ -77,14 +77,8 @@ class SearchRepository @Inject constructor(
     suspend fun addGameToWishlist(game: Game): Result<Unit> {
         // 1. Save game entity to Room
         cacheSummary(game)
-        try {
-            apiService.getGameDetails(game.id)?.let { wishlistRepository.saveGame(it.toDomainModel()) }
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (_: Exception) {
-            // The cached summary can still be tracked offline and refreshed by the daily worker.
-        }
-        // 2. Add to wishlist
+        // The selected result is already sufficient to track. Details refresh when opened;
+        // a remote provider must never delay saving a game that is already on screen.
         return wishlistRepository.addGameToWishlist(game.id)
     }
 

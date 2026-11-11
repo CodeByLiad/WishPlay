@@ -87,8 +87,11 @@ fun WishlistScreen(
     onNavigateToProfile: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val customColors = WishPlayThemeColors
     val context = androidx.compose.ui.platform.LocalContext.current
+    val notificationPermissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted -> viewModel.onNotificationPermissionResult(granted) }
+    val customColors = WishPlayThemeColors
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(uiState.snackbarMessage) {
@@ -367,15 +370,17 @@ fun WishlistScreen(
 
         // Notification Priming Sheet
         if (uiState.showNotifPrimingSheet) {
-            ModalBottomSheet(
-                onDismissRequest = viewModel::hideNotifSheet,
-                sheetState = rememberModalBottomSheetState()
-            ) {
-                NotificationPrimingSheetContent(
-                    onAllow = viewModel::onAllowNotifications,
-                    onDeny = viewModel::onDenyNotifications
-                )
-            }
+            com.jinatra.wishplay.ui.alerts.sheets.NotificationPrimingSheet(
+                onDismiss = viewModel::onDenyNotifications,
+                onAllowClicked = {
+                    if (android.os.Build.VERSION.SDK_INT >= 33) {
+                        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        viewModel.onNotificationPermissionResult(
+                            com.jinatra.wishplay.notifications.NotificationHelper.areNotificationsEnabled(context))
+                    }
+                }
+            )
         }
     }
 }
@@ -718,95 +723,6 @@ private fun SortSheetContent(
 
         Text(
             text = "Sorting by release date also groups your list by month.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun NotificationPrimingSheetContent(
-    onAllow: () -> Unit,
-    onDeny: () -> Unit
-) {
-    val customColors = WishPlayThemeColors
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-            .padding(bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = "Want a heads-up before it drops?",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Text(
-            text = "Android has to ask before WishPlay can send anything. Without it, nothing on your list can reach you.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        // Notification mock preview
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(BorderStroke(1.dp, customColors.outlineVariant), RoundedCornerShape(20.dp))
-                .padding(14.dp)
-        ) {
-            Row(verticalAlignment = Alignment.Top) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(customColors.accent),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = null,
-                        tint = customColors.onAccent,
-                        modifier = Modifier.size(17.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(10.dp))
-                Column {
-                    Text(
-                        text = "Pocket Kingdoms is out today",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Now on Android and iOS · tap to open",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
-        ExpressiveButton(
-            onClick = onAllow,
-            modifier = Modifier.fillMaxWidth(),
-            style = ButtonStyle.GOLD,
-            isLarge = true,
-            text = "Turn on notifications"
-        )
-
-        ExpressiveButton(
-            onClick = onDeny,
-            modifier = Modifier.fillMaxWidth(),
-            style = ButtonStyle.TEXT,
-            text = "Not now"
-        )
-
-        Text(
-            text = "You can change this any time in Profile. Each alert type is its own Android channel, so you can mute them one by one.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

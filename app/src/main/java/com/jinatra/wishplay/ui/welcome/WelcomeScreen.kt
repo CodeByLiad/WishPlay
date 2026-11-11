@@ -8,6 +8,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -244,7 +247,7 @@ private fun SetupStepPlatforms(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(62.dp)
+                                    .heightIn(min = 64.dp)
                                     .clip(shape)
                                     .background(if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
                                     .border(
@@ -254,8 +257,9 @@ private fun SetupStepPlatforms(
                                         ),
                                         shape
                                     )
-                                    .clickable { onTogglePlatform(platform.shortName) }
-                                    .padding(horizontal = 14.dp),
+                                    .toggleable(value = isSelected, role = Role.Checkbox,
+                                        onValueChange = { onTogglePlatform(platform.shortName) })
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
                                 contentAlignment = Alignment.CenterStart
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -268,15 +272,15 @@ private fun SetupStepPlatforms(
                                             ),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Text(
-                                            text = platform.shortName.take(2).uppercase(),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = if (isSelected) customColors.onAccent else MaterialTheme.colorScheme.onSurface
+                                        com.jinatra.wishplay.ui.components.PlatformIcon(
+                                            platform = platform,
+                                            tint = if (isSelected) customColors.onAccent else MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Text(
                                         text = platform.shortName,
+                                        modifier = Modifier.weight(1f),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
                                     )

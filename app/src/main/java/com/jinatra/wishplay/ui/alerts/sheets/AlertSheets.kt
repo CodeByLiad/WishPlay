@@ -3,6 +3,8 @@ package com.jinatra.wishplay.ui.alerts.sheets
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +52,7 @@ fun NotificationPrimingSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 28.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -60,7 +63,7 @@ fun NotificationPrimingSheet(
             )
 
             Text(
-                text = "Android has to ask before WishPlay can send anything. Without it, nothing on your list can reach you.",
+                text = "Turn on notifications for release-day reminders, countdowns, and date changes. You can keep using your wishlist if you choose Not now.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -94,13 +97,13 @@ fun NotificationPrimingSheet(
 
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            text = "Pocket Kingdoms is out today",
+                            text = "A game on your wishlist is out today",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Now on Android and iOS · tap to open",
+                            text = "Release-day reminder · tap to open",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

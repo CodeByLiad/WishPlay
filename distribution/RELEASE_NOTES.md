@@ -1,15 +1,15 @@
-# WishPlay 1.2.1 — Google sign-in connection fix
+# WishPlay 1.2.2 — Working Android search and notification setup
 
-Fixes the **“An internal error has occurred. [ Pin verification failed ]”** sign-in error in 1.2.0.
+- Android searches now use Google Play listings as an independent source. Search and browse can show real games when RAWG is unavailable.
+- Steam and App Store results also stay available during a RAWG outage. Provider deadlines and an overall search deadline prevent an endless loading spinner.
+- Saving a result no longer waits for another remote details request. Store-only records preserve unknown release dates rather than inventing dates.
+- Onboarding uses platform marks and a PC monitor icon instead of two-letter placeholders. Platform names distinguish PS4/PS5 and Switch/Switch 2.
+- Android 13+ offers notification setup after onboarding, and once for existing users who were never asked. “Turn on notifications” opens Android's permission dialog; “Not now” lets you continue without repeated prompts. Earlier Android versions do not have this runtime notification dialog.
+- Fixed onboarding navigation rebuilding the main screen and interrupting permission setup.
+- Every feature remains free. Optional bKash support: **01978900129**. No admin screens.
 
-The app's network security configuration pinned all Google API connections to a fixed set of certificate keys. Those pins rejected valid certificate chains for Firebase Authentication, token refresh, and Firestore. The same failure was reproduced against all three services from the installed 1.2.0 app.
+Install over the existing Jinatra app to keep your wishlist. Same package and signing certificate; version code **6**.
 
-- Removed the stale third-party certificate pins from Android network configuration and the shared HTTP client.
-- HTTPS remains required, with normal system certificate and hostname verification. No permissive trust manager or hostname verifier was added.
-- Added live Android regression checks for the three affected endpoints, Firebase Authentication's response to a deliberately invalid test token, and cleartext blocking. These checks do not use or create a real account.
-- Verified the original 1.2.0 failure, then passed all three live authentication transport tests with this fix. All 41 unit tests also pass.
-- All features remain free; optional bKash donations and the existing wishlist are unchanged.
+Console searches still depend on RAWG availability. Google Play listing formats and store availability can change. Real-account Google sign-in/cloud sync and physical-phone background delivery are not claimed as fully verified by emulator tests. The sign-in TLS fix from 1.2.1 is included.
 
-Install this APK over the existing app to retain your wishlist. It uses the same Jinatra signing certificate and Android package, with version code **5**.
-
-Completing Google account selection and cloud sync with a real account still requires an on-device retry after updating. Catalog-provider outages and device-specific background reminder timing remain separate verification limits.
+Verification: 41 unit tests and 15 targeted Android checks passed across live catalog, search/details/save, platform selection, actual notification permission, reminder posting, and provider-failure regression runs. Release lint and signed assembly passed. See Docs/Release_Verification.md for exact scope and limits.

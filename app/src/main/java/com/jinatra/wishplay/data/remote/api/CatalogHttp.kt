@@ -8,7 +8,12 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 internal suspend fun OkHttpClient.catalogJson(url: String): JSONObject {
-    val call = newCall(Request.Builder().url(url).header("Accept", "application/json").build())
+    return JSONObject(catalogText(url, "application/json"))
+}
+
+internal suspend fun OkHttpClient.catalogText(url: String, accept: String = "text/html"): String {
+    val call = newCall(Request.Builder().url(url).header("Accept", accept)
+        .header("User-Agent", "Mozilla/5.0 (compatible; WishPlay/1.2.2)").build())
     return suspendCancellableCoroutine { continuation ->
         continuation.invokeOnCancellation { call.cancel() }
         call.enqueue(object : Callback {
@@ -19,7 +24,11 @@ internal suspend fun OkHttpClient.catalogJson(url: String): JSONObject {
                 val result = runCatching {
                     response.use {
                         if (!it.isSuccessful) throw IOException("Catalog unavailable (${it.code})")
-                        JSONObject(it.body?.string() ?: throw IOException("Empty catalog response"))
+                        val body = it.body ?: throw IOException("Empty catalog response")
+                        if (body.contentLength() > 6 * 1024 * 1024) throw IOException("Catalog response too large")
+                        val text = body.string()
+                        if (text.length > 6 * 1024 * 1024) throw IOException("Catalog response too large")
+                        text
                     }
                 }
                 if (continuation.isActive) result.fold(continuation::resume, continuation::resumeWithException)

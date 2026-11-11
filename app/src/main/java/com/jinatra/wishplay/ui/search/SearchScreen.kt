@@ -458,8 +458,8 @@ fun SearchScreen(
                     Column {
                         Text("Sources · store listings are for the US", style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            listOf("RAWG" to "https://rawg.io", "Steam" to "https://store.steampowered.com", "App Store" to "https://apps.apple.com").forEach { (name, url) ->
+                        Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            listOf("Google Play" to "https://play.google.com/store/apps/category/GAME", "RAWG" to "https://rawg.io", "Steam" to "https://store.steampowered.com", "App Store" to "https://apps.apple.com").forEach { (name, url) ->
                                 Text(name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.clickable { uriHandler.openUri(url) }.padding(vertical = 12.dp))
                             }
@@ -554,7 +554,7 @@ fun SearchResultRow(
         else -> releaseGame.releaseDate ?: "Upcoming"
     }
 
-    val sourceTag = when { game.id.startsWith("steam_") -> "Steam · "; game.id.startsWith("apple_") -> "App Store · "; else -> "" }
+    val sourceTag = when { game.id.startsWith("play_") -> "Google Play · "; game.id.startsWith("steam_") -> "Steam · "; game.id.startsWith("apple_") -> "App Store · "; else -> "" }
     val platformsText = sourceTag + game.platforms.keys.joinToString(", ")
 
     val buttonCornerRadius by animateDpAsState(

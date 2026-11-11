@@ -22,6 +22,7 @@ internal class StoreCatalog(client: OkHttpClient) {
     }
 
     suspend fun searchSteam(query: String): List<GameDto> {
+        if (query.isBlank()) return browseSteam()
         val items = json("https://store.steampowered.com/api/storesearch/?term=${URLEncoder.encode(query, "UTF-8")}&l=english&cc=us").optJSONArray("items")
             ?: return emptyList()
         return (0 until items.length()).mapNotNull { index ->
@@ -34,6 +35,22 @@ internal class StoreCatalog(client: OkHttpClient) {
                 platforms = mapOf("PC" to null),
                 releaseEvidence = mapOf("PC" to listOf(ReleaseEvidence("Steam (US)", null, "https://store.steampowered.com/app/$id/"))))
         }
+    }
+
+    private suspend fun browseSteam(): List<GameDto> {
+        val page = json("https://store.steampowered.com/api/featuredcategories/?cc=us&l=english")
+        return listOf("top_sellers", "new_releases", "coming_soon", "specials").flatMap { section ->
+            val items = page.optJSONObject(section)?.optJSONArray("items") ?: return@flatMap emptyList()
+            (0 until items.length()).mapNotNull { index ->
+                val item = items.getJSONObject(index)
+                val id = item.optLong("id")
+                if (id <= 0 || item.optInt("type") != 0) return@mapNotNull null
+                GameDto(id = "steam_$id", title = item.getString("name"),
+                    coverUrl = item.optString("header_image").takeIf { it.startsWith("https://") },
+                    platforms = mapOf("PC" to null), releaseEvidence = mapOf("PC" to listOf(
+                        ReleaseEvidence("Steam (US)", null, "https://store.steampowered.com/app/$id/"))))
+            }
+        }.distinctBy { it.id }.take(40)
     }
 
     suspend fun steamDetails(id: Long): GameDto? {
@@ -51,7 +68,7 @@ internal class StoreCatalog(client: OkHttpClient) {
     }
 
     suspend fun searchApple(query: String): List<GameDto> {
-        val items = json("https://itunes.apple.com/search?term=${URLEncoder.encode(query, "UTF-8")}&entity=software&country=us&limit=100").optJSONArray("results")
+        val items = json("https://itunes.apple.com/search?term=${URLEncoder.encode(query.ifBlank { "games" }, "UTF-8")}&entity=software&country=us&limit=100").optJSONArray("results")
             ?: return emptyList()
         return (0 until items.length()).mapNotNull { mapApple(items.getJSONObject(it)) }
     }
