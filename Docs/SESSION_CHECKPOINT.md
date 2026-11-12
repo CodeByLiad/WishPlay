@@ -1,6 +1,6 @@
 # WishPlay checkpoint — November 12, 2026
 
-Version 1.4.0 is verified and packaged; GitHub publication is the remaining step. The user resumed with “Continue” and previously authorized pushing changes and publishing the signed release.
+Version 1.4.0 is published and the code, README, screenshots, checksum and update manifest are pushed to main. The user resumed with “Continue” on November 12; the requested discovery correction and signed-release publication are complete.
 
 ## Verified implementation
 
@@ -21,9 +21,13 @@ Version 1.4.0 is verified and packaged; GitHub publication is the remaining step
 - Source revisions: ba2d8b0 (discovery and verified listing fixes), 47a01eb (test diagnostics; final APK source revision).
 - Final expected-title timings: 44–2,089 ms on this emulator/connection; Alan Wake 2 matched in 451 ms. No universal instant-network guarantee is made.
 
-## Publication sequence
+## Observed publication outcome
 
-Keep the existing main-branch update manifest pointing at the published release until the new APK is public. Push the prepared release commit to a temporary codex/ release branch, upload and verify draft assets, publish version 1.4.0, verify its public download, then fast-forward main with the README and update manifest. Update this checkpoint with the observed release outcome.
+- [Published release](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.4.0) is marked latest and is not a draft.
+- [Signed APK](https://github.com/CodeByLiad/WishPlay/releases/download/v1.4.0/WishPlay-1.4.0-Jinatra.apk) was downloaded again after publication; its SHA-256 matches the verified local artifact above.
+- GitHub's server-side digests match all three uploaded assets: APK, checksum file and update manifest.
+- Source/documentation release commit: 5a51f88e39b4e8342e23fff977ce60eb6362a0f1, also the v1.4.0 tag target. Main was advanced only after the public APK download was verified, keeping the update feed from advertising an unavailable asset.
+- No GitHub Actions workflows or active runs were present. Local build/test evidence and exact verification limits are recorded in the linked report.
 
 See [discovery scope](Catalog_Discovery.md), [verification](Release_Verification.md), and [design/Mobbin references](Design_System.md). Real-account sync and physical-phone background delivery remain separate verification scopes. Public catalogs can omit regional, removed or unindexed games.
 
