@@ -1,23 +1,21 @@
-# WishPlay 1.3.0 — Material Expressive redesign
+# WishPlay 1.4.0 — broader game discovery
 
-- Fixed missing Google Play featured/exact matches, including Offroad League Online. Exact title matches rank before recommendations, and punctuation variants share a cache entry.
-- State-based native text input preserves rapid keystrokes and cursor/IME state. Clear and recent-query selection are covered by a native-keyboard regression test.
-- Search streams each working provider immediately instead of waiting for RAWG. Recent queries use an in-memory cache, stale entries refresh in the background, superseded requests cancel, and typing debounce is reduced.
-- Rebuilt the shared theme with full Gold, Violet, Teal, and Coral palettes in light/dark modes. Backgrounds, cards, navigation, controls, sheets, and text follow the selected palette.
-- Adopted Google's Material Expressive theme, motion, native shape families, animated button shapes, morphing loading indicator, standard Material switches, filter chips, and segmented selection controls.
-- Replaced the compact wishlist rows with a cover-led library. Search uses larger artwork, concise metadata, a native Material text field, and calmer add controls.
-- Reorganized Settings around a compact account header and appearance controls, followed by backups, device/reminder settings, account actions, and optional support. Accent choices have visible names.
-- Fixed enabled switches whose track and thumb previously used the same color. The thumb and checked indicator now remain distinct.
-- Added Steam minimum/recommended PC requirements and storage parsing, including labelled HTML, entities, multiline values, and footnote markers. Linked Steam evidence enriches RAWG details too.
-- Unknown specifications, trailers, and storage no longer promise they will arrive later. Removed generic invented mobile hardware requirements and added a direct store-listing action.
-- Added on-demand scheduler initialization for reliable update/startup handling.
+- Added independent Nintendo, PlayStation, Microsoft, and Epic catalogs. Console search now has alternatives when RAWG is unavailable; PC search includes games outside Steam.
+- Added a separate Switch 2 filter and verified platform membership from source metadata. PC-only Microsoft records are not labelled Xbox; older Nintendo systems are not labelled Switch.
+- Added full Steam and Microsoft search alongside their quick results, with real pagination for Steam, Microsoft, Nintendo, PlayStation, and Epic catalogs.
+- Added real product detail lookups and source links for the new catalogs. Saved Epic entries can refresh after reopening using their saved title while validating the stable offer identity.
+- Excluded PlayStation costumes, demos, upgrades and unrelated products. Epic requires game categories and explicit platform tags.
+- Fixed Retry: it refreshes the failed page, bypasses the search snapshot, and retains visible results.
+- Store names remain visible under platform filters. Missing dates say “Date not listed”; confirmed duplicate listings merge metadata/evidence, while different stores and same-name games remain identifiable.
+- Reduced repeated title-normalization work during result merging and sorting.
+- Kept incremental results, cancellation and recent-search caching. Production code contains no title-specific discovery patch or fictional fallback games.
 
-Every feature remains free. Optional donations only display/copy bKash number **01978900129**. No admin or paid upgrade screens.
+Thirty unrelated live title checks cover Android, PC, PS4, PS5, Xbox Series, Switch, and Switch 2. Additional live checks verify new records on later Steam, Nintendo, and PlayStation pages. See [the discovery verification matrix](https://github.com/CodeByLiad/WishPlay/blob/main/Docs/Catalog_Discovery.md).
 
-Install over the existing Jinatra app to retain your wishlist. Same Android package and signing certificate; version code **7**. Material Expressive currently uses Google's experimental Material3 1.5.0-alpha06 APIs. See `Docs/Design_System.md` for component mapping and the Material/Mobbin references used.
+Verification includes 46 unit tests, successful runs for 23 focused Android checks, and a separate smoke check of the exact original-key signed APK. Expected provider/title matches appeared in 44–2,089 ms in the final timed emulator run; network and device speeds vary. See [the exact verification scope](https://github.com/CodeByLiad/WishPlay/blob/main/Docs/Release_Verification.md).
 
-Console search remains dependent on RAWG. Missing provider data is not invented. Store regions are US; catalogs and physical-device background delivery can vary. A completed Google account sign-in/cloud sync is not claimed by the transport-only tests.
+Every feature remains free. Donations are optional, via bKash number **01978900129** only. No admin or paid upgrade screens.
 
-Verification: 41 unit tests and 37 distinct targeted Android checks passed across final successful runs. Live Offroad first results measured 1,382 ms and its cached repeat 1 ms on the test emulator; connection/device speed varies. The deterministic cache test made zero additional HTTP requests. See Docs/Release_Verification.md for the exact scope.
+Install over the existing Jinatra app to retain your wishlist. Package `com.jinatra.wishplay`, version code **8**, original release signing certificate.
 
-The final signed APK also passes a native-input smoke check for guest setup, optional notifications, the exact Offroad query, real details, and theme selection.
+Public catalogs can omit regional, removed, unindexed, or unannounced games. Dates and requirements are shown only when supplied by their sources. This release expands general discovery; it does not claim every game ever made is indexed. Real-account sync and physical-phone background notification delivery remain separate verification scopes.

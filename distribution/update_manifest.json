@@ -1,9 +1,9 @@
 {
-  "versionCode": 7,
-  "versionName": "1.3.0",
-  "apkUrl": "https://github.com/CodeByLiad/WishPlay/releases/download/v1.3.0/WishPlay-1.3.0-Jinatra.apk",
-  "sha256": "aada1a58204845e586af06922fc4994012b4d4ba419909bf585a49b53f76bd29",
+  "versionCode": 8,
+  "versionName": "1.4.0",
+  "apkUrl": "https://github.com/CodeByLiad/WishPlay/releases/download/v1.4.0/WishPlay-1.4.0-Jinatra.apk",
+  "sha256": "ae23df68000cc816fdeac0d6957ad754d3bf59188090d22bd6f70f4d0d18cec0",
   "minSupportedVersionCode": 1,
-  "releaseNotes": "Material Expressive redesign with complete palettes, readable switches, artwork library, and real Steam requirements. Fixes missing featured games including Offroad League Online. Search shows each source immediately and caches recent queries. Every feature remains free.",
-  "publishedAt": "2026-11-11T12:22:06Z"
+  "releaseNotes": "Broader Nintendo, PlayStation, Microsoft and Epic discovery; full store pagination; verified platform data; clear store labels and duplicate handling; faster matching and retry recovery. Every feature remains free.",
+  "publishedAt": "2026-11-12T05:20:30Z"
 }

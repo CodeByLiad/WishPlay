@@ -1,69 +1,61 @@
-# WishPlay 1.3.0 release verification
+# WishPlay 1.4.0 release verification
 
-Verified November 11, 2026, on Android 16. The final focused checks use the dedicated `wishplay_qa` emulator.
+Verified November 12, 2026, on the dedicated `wishplay_qa` Android 16 emulator. This report describes the checked scope; it does not claim every app feature or every game was tested.
 
 | Property | Verified value |
 | --- | --- |
 | Package | `com.jinatra.wishplay` |
-| Version | 1.3.0 (version code 7) |
+| Version | 1.4.0 (version code 8) |
 | Minimum Android | 8.0 / API 26 |
-| Signed APK | `WishPlay-1.3.0-Jinatra.apk` |
-| APK size | 18,950,010 bytes |
-| APK SHA-256 | `aada1a58204845e586af06922fc4994012b4d4ba419909bf585a49b53f76bd29` |
-| Certificate SHA-256 | `bfacf78547d7040ba04fc6dc7483863b4a22891f6e6c4547a0e8412685f450a8` |
+| Signed APK | `WishPlay-1.4.0-Jinatra.apk` |
+| APK size | 18,966,394 bytes |
+| APK SHA-256 | `ae23df68000cc816fdeac0d6957ad754d3bf59188090d22bd6f70f4d0d18cec0` |
+| Original certificate SHA-256 | `bfacf78547d7040ba04fc6dc7483863b4a22891f6e6c4547a0e8412685f450a8` |
 | Signature schemes | v2 and v3 |
-| Unit tests | 41 passed |
-| Distinct Android checks | 37 have passing results across focused runs below |
-| Build checks | Debug/test compilation, unit tests, release lint, and signed release assembly passed |
+| Unit tests | 46 passed, including verified listing identity and metadata merging |
+| Final focused Android checks | 23 passed: 20 catalog checks and 3 actual-screen/native-input checks |
+| Build | Debug/test compilation, unit tests and signed optimized release assembly passed; release lint reported 0 errors and 108 warnings |
 
-## What was actually checked
+## Final focused checks
 
-| Test group | Passing checks | Scope |
+| Test group | Checks | Scope |
 | --- | ---: | --- |
-| ExpressiveDesignRegressionTest | 4 | Eight palette combinations, text/thumb contrast, real on-screen colors and persistence, native library/settings/details captures, Steam HTML parsing, live World Seeker minimum/recommended/storage |
-| FeaturedPlaySearchTest | 4 | Featured game records, rejecting non-games, exact match after 45 recommendations, live Offroad spelling variants/artwork/details, actual UI search/open/save |
-| SearchResponsivenessTest | 3 | A blocked RAWG call cannot delay a working store, cancellation cancels HTTP, repeat cache makes no new requests, measured live first/cached result times |
-| SearchKeyboardRegressionTest | 1 | Rapid individual native keystrokes preserve the exact query; clear and recent selection restore it correctly |
-| LiveStoreSearchTest | 4 | Real One Piece/Genshin searches, artwork downloads/details, Android browse, PC Elden Ring, iOS One Piece, PC browse, parsing/error guards |
-| MultiSourceCatalogTest | 6 | Provider failures, linked-store date evidence, platform exclusions, supplementary query behavior |
-| CatalogRegressionTest | 2 | Catalog mapping and pagination regressions |
-| BackupAndMigrationTest | 2 | Atomic/idempotent imports, existing-entry preservation, encrypted wishlist migration |
-| UxComponentRegressionTest | 2 | Date picker cancellation/validation, exact bKash number display and clipboard copy |
-| UxFlowRegressionTest | 1 | Calendar, custom game, and recoverable removal flow |
-| AppUiRegressionTest | 2 | Main tabs/system bars, live Genshin artwork, per-game platform choices and pending alerts |
-| AuthenticationTransportTest | 3 | Live Google/Firebase TLS, invalid-token server response, cleartext blocking |
-| NotificationDeliveryTest | 1 | Four notification types, channels, and content actions |
-| SearchAndPermissionUiTest | 2 | Actual Android permission dialog/Allow after onboarding, and live One Piece details/save |
+| BroadDiscoveryLiveTest | 2 | 30 unrelated real title queries across Android, PC, PS4, PS5, Xbox, Switch and Switch 2; 16 reopened detail lookups using a new API instance and saved title |
+| ConsoleCatalogRegressionTest | 6 | Explicit platform membership, game/add-on filtering, unknown dates, new Nintendo artwork fields, Microsoft response formats and continuation origin checks, independent Switch 2 pagination |
+| CatalogPaginationTest | 2 | Steam HTML/title/date parsing and live additional Steam, Nintendo, PlayStation and Microsoft pages |
+| MultiSourceCatalogTest | 6 | Primary/secondary outages, linked-store evidence, excluded-platform results and supplementary request behavior |
+| SearchResponsivenessTest | 4 | Working results before blocked RAWG, HTTP cancellation, cache reuse, explicit retry bypass, live Offroad first/cached results |
+| ConsoleDiscoveryUiTest | 1 | Actual app search and detail navigation for Astro Bot on PS5 and Mario Kart World on Switch 2 |
+| SearchKeyboardRegressionTest | 1 | Rapid native key events preserve the complete query; clear and recent selection work |
+| SearchListingUiTest | 1 | Selected-platform rows retain store names and missing dates say Date not listed |
 
-The Android tests use the debug variant and shared production UI/networking code. Signed release identity, metadata, packaged behavior, and download integrity are checked separately. The optional permission prompt is never replaced by a shell grant in its interactive test. Temporary wishlist entries are cleaned up; pre-existing entries are preserved.
+Final counts refer to successful reruns. Earlier emulator attempts encountered Android startup timeouts before test execution; one trace was in framework instrumentation resource loading, and another main-thread trace was idle. The dedicated emulator was restarted with four cores, the build process was stopped before testing, and the checks were rerun. These failed attempts are not counted as passes. Signed-APK startup is checked separately below.
 
-## Missing game and latency diagnosis
+The combined 23-check run had 22 passes and a keyboard-visibility timeout. Its diagnostic capture showed a System UI error dialog and `windowFocus=false`. The unchanged native-keyboard check passed separately after that dialog was cleared. The final counts therefore describe successful checks across focused runs, not a single uninterrupted all-green run.
 
-Google Play's live responses contained Offroad League Online for `off-road league online`, `offroad league online`, and `off road league online`. It was in a featured full-app record that the earlier compact-row parser skipped. The parser now reads both formats, accepts a featured item only with a valid package/image and `GAME_` category, and ranks normalized exact titles first. The regression includes a featured match after more than 40 earlier recommendations, so truncation cannot hide it.
+Eight additional existing live-store, catalog mapping, and backup/migration checks passed during this development cycle before the final Microsoft full-search addition; they are not included in the 23 final focused checks above.
 
-Search previously waited for RAWG before returning stores that had already answered. Production search now streams provider updates. A deterministic test holds RAWG blocked while the store appears, then verifies cancellation of the outstanding call. The live Offroad test measured **1,382 ms to its first results** and **1 ms for its cached repeat**. A separate cache test measured 6 ms and zero extra HTTP requests. These are model-result timings on this emulator/connection, not a promise about every device, image download, or network.
+## Discovery and response times
 
-The in-memory cache holds 32 query/page snapshots. Complete snapshots are fresh for 60 seconds. Older snapshots up to 24 hours old appear immediately while refreshing, with an explicit saved-results notice; unavailable providers leave usable saved results. The cache does not survive process termination. Provider budgets and a 12-second overall deadline remain. Superseded queries cancel HTTP calls and generation checks prevent late results overwriting newer searches. The typing debounce is 180 ms. Text editing uses native state-based Material input rather than feeding IME edits through asynchronously combined results state.
+The final live matrix asserts expected provider IDs, titles, platform membership and source links. Minecraft PC specifically requires **Minecraft: Java & Bedrock Edition for PC**; Minecraft Legends is insufficient. Production code contains no per-title patch or fictional fallback record.
 
-## UI and requirements evidence
+The expected game appeared in **44–2,089 ms** across the 16 timed PC/console queries. First-result and expected-title timings are measured separately. A complete provider aggregation can take longer while a slow source reaches its deadline. Artwork, phone performance and network conditions vary. Cached-repeat and cancellation checks remain separate deterministic tests.
 
-The screen captures in [the design system](Design_System.md) and [README](../README.md) come from the running app. Gold, Violet, Teal, and Coral were selected in both modes and checked against actual screen pixels, not just stored preference values. Palette contrast checks cover body text, primary/container text, and the switch thumb. The final visual batch confirms separated settings surfaces, readable dark system bars, wrapped PC requirement values, distinct switch thumbs/checkmarks, and artwork-led library cards.
+Second pages returned **50 additional Steam games, 40 Nintendo games, 11 PlayStation games and 13 Microsoft games** in the final live pagination run. Counts can change as listings/ranking change. These checks use the store adapters directly and do not depend on RAWG.
 
-World Seeker (`steam_755500`) supplies minimum/recommended PC specifications and 25 GB storage in Steam's live response. Steam's `OS *:` footnote marker is handled. Unknown requirements/storage/trailers say unavailable rather than promising future data. Generic invented mobile hardware specifications were removed. Store links provide the original listing. Material Expressive APIs use Google's experimental Material3 1.5.0-alpha06 with Compose BOM 2025.10.01; source/API availability and Mobbin references are recorded in the design-system document.
+See [the complete provider matrix, mechanisms and limits](Catalog_Discovery.md).
 
-Some attempts failed during emulator boot, loss of unlocked-user/network state, or unrelated System UI/Digital Wellbeing ANR overlays. Those attempts are not counted as successful verification. Focused UI checks were rerun after clearing that interference on the dedicated emulator. Test-harness return-type and input-readiness issues were corrected. Native typing exposed a real field-state issue; state-based input and a separate native-keystroke regression now cover it. Reminder scheduling also uses supported on-demand initialization after an update/startup path exposed an initialization failure.
+## Exact signed-APK smoke check
 
-## Signed APK smoke check
+Installed the final original-key signed APK on the dedicated emulator, then used native controls and typing to check guest setup, optional notification setup, the exact Offroad query and Google Play details, appearance settings/Teal accent, Astro Bot PS5 search/details with its real date, and Alan Wake 2 PC search/Epic details with its real date. This exercises new discovery adapters in the optimized artifact, not just a debug build.
 
-The final minified, signed APK was installed fresh on the dedicated QA emulator. A normal native-input flow completed guest onboarding, chose Not now for notifications, typed the exact `off-road league online` query, found Offroad League Online, opened Rooster Games details, opened Settings, and selected Teal. This check uses the release APK rather than the debug/test build. Signing certificate, package/version, and checksum were verified separately.
+The final fresh installation launched cold in 2,059 ms. Search captures confirm that store names remain visible with PC selected and that missing dates no longer imply a future announcement. The APK was built from source revision `47a01eb`, retaining the original certificate.
 
-## Limits and compatibility
+## Remaining limits
 
-- RAWG was unavailable during live search testing. Android, PC, and iOS have independent store results; console catalog coverage still depends on RAWG. No claim of a complete universal game catalog is made.
-- Public Google Play formats and store coverage can change. Store regions are US. Missing release dates remain unknown; release state is not invented from an update date.
-- Completed Google account selection/cloud sync with a real account is not proved by the transport-only tests. Physical-phone background scheduling and battery restrictions remain device-dependent.
-- Android 8–12 behavior was inspected in code; this release was not tested on a separate emulator for every supported Android version.
-- Every feature remains free. Donations only display/copy bKash **01978900129**; admin/purchase flows remain absent. No server/account records were deployed or modified.
-- Same package, release key, and database version. Install over the existing Jinatra app to retain data. APK binaries are release assets, excluded from Git source history. The updater uses the canonical CodeByLiad/WishPlay manifest; older builds using a separate release repository may need manual installation.
+- No public source guarantees every regional, removed, unindexed or unannounced game. Google Play and App Store search responses remain limited. Missing platform information and requirements are not invented.
+- Nintendo dates are labelled Europe; the other independent stores use US listings. Public response formats and PlayStation's published query hash may change; provider failures are isolated.
+- Google account completion/cloud sync and physical-phone background notification delivery are separate verification scopes. This discovery release does not claim those were fully exercised by its catalog tests.
+- Material Expressive continues to use the existing experimental Material3 APIs. No unrelated framework upgrade was included.
 
-[Release](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.3.0) · [Signed APK](https://github.com/CodeByLiad/WishPlay/releases/download/v1.3.0/WishPlay-1.3.0-Jinatra.apk)
+[Release](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.4.0) · [Signed APK](https://github.com/CodeByLiad/WishPlay/releases/download/v1.4.0/WishPlay-1.4.0-Jinatra.apk) · [Previous 1.3.0 verification](Release_Verification_1.3.0.md)

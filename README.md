@@ -14,7 +14,7 @@ WishPlay is an offline-first native Android game wishlist and release tracking a
 
 ## Download
 
-[Download WishPlay 1.3.0 for Android](https://github.com/CodeByLiad/WishPlay/releases/download/v1.3.0/WishPlay-1.3.0-Jinatra.apk) · [Release notes and checksum](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.3.0)
+[Download WishPlay 1.4.0 for Android](https://github.com/CodeByLiad/WishPlay/releases/download/v1.4.0/WishPlay-1.4.0-Jinatra.apk) · [Release notes and checksum](https://github.com/CodeByLiad/WishPlay/releases/tag/v1.4.0)
 
 Requires Android 8.0 or later. Every feature is free. Optional bKash donations: **01978900129**.
 
@@ -23,8 +23,10 @@ Requires Android 8.0 or later. Every feature is free. Optional bKash donations: 
 ## ✨ Features
 
 - **Responsive Search:** Working providers appear immediately, recent searches are cached, stale results refresh in the background, and superseded requests cancel. Google Play featured results are included and exact matches rank first.
+- **Clear Store Listings:** Store names stay visible under platform filters. Verified duplicates combine their metadata; different listings and same-name games remain identifiable. Missing dates say “Date not listed.”
+- **Broader Discovery:** Independent Nintendo, PlayStation, Microsoft, and Epic catalogs supplement Google Play, Steam, App Store, and RAWG. Full Steam, Microsoft, Nintendo, PlayStation, and Epic result pages continue beyond the first response. [See the live coverage matrix and limitations](Docs/Catalog_Discovery.md).
 - **PC Requirements:** Steam minimum/recommended specifications and storage sizes are shown when provided, with honest unavailable states and direct store links.
-- **Multi-Platform Tracking:** Follow games across PC (Steam), PS5, Xbox Series X/S, Nintendo Switch / Switch 2, Android, and iOS with independent release dates per platform.
+- **Multi-Platform Tracking:** Follow games across PC, PS4, PS5, Xbox Series X/S, Nintendo Switch / Switch 2, Android, and iOS. Platform membership comes from store records; release evidence identifies its source and region.
 - **Offline-First & Encrypted:** Complete local functionality using Room encrypted with **SQLCipher** (256-bit AES-GCM key backed by Android Keystore).
 - **Custom Games:** Add any unannounced or indie game that isn't in public databases yet with custom dates and notes.
 - **Smart Alerts Engine:**
@@ -53,6 +55,13 @@ Requires Android 8.0 or later. Every feature is free. Optional bKash donations: 
 </p>
 
 Screens captured from the running Android app. [Verification details and limits](Docs/Release_Verification.md).
+
+Version 1.4.0 signed-APK captures show independent PC store results and PlayStation details:
+
+<p>
+  <img src="Docs/screenshots/1.4.0/pc-store-search.png" width="240" alt="PC search with visible Epic and Microsoft store names and source-specific date labels" />
+  <img src="Docs/screenshots/1.4.0/ps5-details.png" width="240" alt="Astro Bot details with PlayStation Store release evidence" />
+</p>
 
 ---
 ## 🛠 Tech Stack & Architecture
@@ -98,13 +107,13 @@ cd WishPlay
 The compiled release APK will be generated at:
 `app/build/outputs/apk/release/app-release.apk`
 
-Version 1.3.0 uses the Android application ID `com.jinatra.wishplay` and the Jinatra signing certificate in `keystore/wishplay-jinatra-release.jks`. Configure signing credentials in the untracked `local.properties`; keep the original keystore for earlier releases. Version 1.3.0 updates the Jinatra 1.0.1/1.1.0 releases in place. Older builds with a different application ID install separately and do not share local data. Firebase is registered for this package and its signing certificates; `node scripts/register-android-app.cjs --apply` refreshes that registration using the existing local service account. Run `node scripts/verify-catalog.cjs` for live platform search, artwork, and pagination checks.
+Version 1.4.0 uses the Android application ID `com.jinatra.wishplay` and the Jinatra signing certificate in `keystore/wishplay-jinatra-release.jks`. Configure signing credentials in the untracked `local.properties`; keep the original keystore for earlier releases. Version 1.4.0 updates earlier Jinatra releases in place. Older builds with a different application ID install separately and do not share local data. Firebase is registered for this package and its signing certificates; `node scripts/register-android-app.cjs --apply` refreshes that registration using the existing local service account. Android instrumented checks `BroadDiscoveryLiveTest` and `CatalogPaginationTest` exercise the actual production adapters, multiple titles, reopened details, and later result pages. They require a connected, fully booted test emulator with network access. The older `scripts/verify-catalog.cjs` is a separate RAWG/store probe and does not cover the expanded app search.
 
 ---
 
 ## 🔒 Security & Privacy
 
-- **Catalog Access:** The client queries RAWG, Google Play (Android), Steam (PC), and App Store (iOS) directly. Store results remain available when RAWG times out; console search still depends on RAWG. Search has bounded provider deadlines and reports failures instead of spinning indefinitely. Google Play uses public listing data whose format can change; no catalog is guaranteed complete. The RAWG client key remains bundled; moving it behind a server proxy is tracked in the release verification notes.
+- **Catalog Access:** The client queries RAWG and seven independent public store catalogs: Google Play, Steam, App Store, Nintendo Europe, PlayStation Store, Microsoft Store, and Epic Games Store. Supported store listings remain searchable when RAWG is unavailable, including console games. Provider deadlines and failure messages prevent indefinite loading. Store formats, regional availability, and indexing can change; no universal catalog is guaranteed complete. The RAWG client key remains bundled; moving it behind a server proxy remains separate work. [Discovery implementation and verified scope](Docs/Catalog_Discovery.md).
 - **Encrypted Storage:** Room SQLite database encrypted via SQLCipher with keys in the Android Keystore.
 - **No Third-Party Trackers:** Zero ad networks, zero privacy-invasive tracking SDKs.
 - **Backup Exclusions:** Database and token preferences explicitly excluded from cloud backups.
