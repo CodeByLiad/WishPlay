@@ -73,7 +73,7 @@ class DailyCheckWorker(
             if (gameEntity.isCustom) continue // PRD: Custom games use only the user's date; no daily check.
 
             val freshDto = try {
-                apiService.getGameDetails(gameEntity.id)
+                apiService.getGameDetails(gameEntity.id, gameEntity.title)
             } catch (_: Exception) {
                 null
             } ?: continue

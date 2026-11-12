@@ -19,6 +19,23 @@ import java.util.concurrent.atomic.AtomicReference
 class SearchResponsivenessTest {
     private val store = """{"items":[{"type":"app","id":123,"name":"Cached Game","tiny_image":"https://cdn.example.com/game.jpg"}]}"""
 
+    @Test fun explicitRetryFetchesAgainInsteadOfReusingTheDegradedSnapshot() = runBlocking<Unit> {
+        val requests = AtomicInteger()
+        val client = OkHttpClient.Builder().addInterceptor { chain ->
+            requests.incrementAndGet()
+            if (chain.request().url.encodedPath.contains("storesearch")) response(chain.request(), 200, store)
+            else response(chain.request(), 503, "{}")
+        }.build()
+        val api = WishPlayApiServiceImpl(client)
+        api.searchGamesPage("Cached Game", "PC", 1)
+        val before = requests.get()
+        api.searchGamesPage("Cached Game", "PC", 1)
+        assertEquals(before, requests.get())
+        api.invalidateSearchPage("Cached Game", "PC", 1)
+        assertEquals("steam_123", api.searchGamesPage("Cached Game", "PC", 1).games.single().id)
+        assertTrue("Explicit retry must contact providers again", requests.get() > before)
+    }
+
     @Test fun workingStoreAppearsWhileDatabaseIsStillBlockedAndCancellationStopsTheCall() = runBlocking<Unit> {
         val entered = CountDownLatch(1)
         val release = CountDownLatch(1)

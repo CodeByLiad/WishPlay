@@ -75,11 +75,12 @@ class GameDetailsViewModel @Inject constructor(
         viewModelScope.launch {
             _loadState.value = true to null
             try {
-                if (wishlistRepository.observeGameById(gameId).first()?.isCustom == true) {
+                val cachedGame = wishlistRepository.observeGameById(gameId).first()
+                if (cachedGame?.isCustom == true) {
                     _loadState.value = false to null
                     return@launch
                 }
-                val dto = apiService.getGameDetails(gameId)
+                val dto = apiService.getGameDetails(gameId, cachedGame?.title)
                 if (dto != null) {
                     val domainGame = dto.toDomainModel()
                     _remoteGame.value = domainGame

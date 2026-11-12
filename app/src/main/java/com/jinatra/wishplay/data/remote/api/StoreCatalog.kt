@@ -1,6 +1,7 @@
 package com.jinatra.wishplay.data.remote.api
 
 import com.jinatra.wishplay.data.remote.dto.GameDto
+import com.jinatra.wishplay.data.remote.dto.GameSearchPage
 import com.jinatra.wishplay.domain.model.ReleaseEvidence
 import com.jinatra.wishplay.domain.model.storeReleaseDate
 import okhttp3.OkHttpClient
@@ -22,6 +23,31 @@ internal class StoreCatalog(client: OkHttpClient) {
         val value = client.catalogJson(url)
         synchronized(cache) { cache[url] = System.currentTimeMillis() to value }
         return value
+    }
+
+    /** Full search is paginated separately from Steam's small, fast suggestion response. */
+    suspend fun searchSteamPage(query: String, page: Int): GameSearchPage {
+        val start = (page.coerceAtLeast(1) - 1) * 50
+        return parseSteamPage(json("https://store.steampowered.com/search/results/?term=${URLEncoder.encode(query.trim(), "UTF-8")}&start=$start&count=50&category1=998&infinite=1&json=1&l=english&cc=us"))
+    }
+
+    internal fun parseSteamPage(json: JSONObject): GameSearchPage {
+        if (json.optInt("success") != 1) throw java.io.IOException("Steam search is unavailable")
+        val html = json.getString("results_html")
+        val rows = Regex("(?is)<a\\b([^>]*class=\"[^\"]*search_result_row[^\"]*\"[^>]*)>(.*?)</a>").findAll(html).toList()
+        if (html.contains("search_result_row") && rows.isEmpty()) throw java.io.IOException("Steam search could not be read")
+        val games = rows.mapNotNull { row ->
+            val id = Regex("data-ds-appid=\"([0-9]+)\"").find(row.groupValues[1])?.groupValues?.get(1)?.toLongOrNull() ?: return@mapNotNull null
+            val body = row.groupValues[2]
+            val name = Regex("(?is)<span[^>]*class=\"title\"[^>]*>(.*?)</span>").find(body)?.groupValues?.get(1) ?: return@mapNotNull null
+            val title = Html.fromHtml(name, Html.FROM_HTML_MODE_LEGACY).toString().trim().takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val date = Regex("(?is)<div[^>]*class=\"[^\"]*search_released[^\"]*\"[^>]*>(.*?)</div>").find(body)?.groupValues?.get(1)
+                ?.let { storeReleaseDate(Html.fromHtml(it, Html.FROM_HTML_MODE_LEGACY).toString().trim()) }
+            val image = Regex("<img[^>]*src=\"([^\"]+)\"").find(body)?.groupValues?.get(1)?.takeIf { it.startsWith("https://") }
+            GameDto(id = "steam_$id", title = title, coverUrl = image, platforms = mapOf("PC" to date),
+                releaseEvidence = mapOf("PC" to listOf(ReleaseEvidence("Steam (US)", date, "https://store.steampowered.com/app/$id/"))))
+        }
+        return GameSearchPage(games, hasMore = rows.isNotEmpty() && json.optInt("start") + rows.size < json.getInt("total_count"))
     }
 
     suspend fun searchSteam(query: String): List<GameDto> {

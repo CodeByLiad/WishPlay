@@ -71,6 +71,8 @@ class SearchRepository @Inject constructor(
             SearchPageResult(it.games.map { dto -> dto.toDomainModel() }, it.hasMore, it.warnings, it.isComplete)
         }
 
+    fun invalidateSearchPage(query: String, platform: String, page: Int) = apiService.invalidateSearchPage(query, platform, page)
+
     fun searchGamesUpdates(query: String, platform: String, page: Int): Flow<SearchPageResult> =
         apiService.searchGamesUpdates(query, platform, page).map {
             SearchPageResult(it.games.map { dto -> dto.toDomainModel() }, it.hasMore, it.warnings, it.isComplete)

@@ -33,6 +33,10 @@ class MultiSourceCatalogTest {
         val request = chain.request()
         val rawgGame = """{"id":1,"name":"Ports","slug":"ports","platforms":[{"platform":{"slug":"pc","name":"PC"},"released_at":"2020-01-01"},{"platform":{"slug":"playstation5","name":"PlayStation 5"},"released_at":"2022-01-01"}]}"""
         val (code, body) = when {
+            request.url.host == "storeedgefd.dsx.mp.microsoft.com" -> (if (rawgCode != 200 && steamCode != 200) 503 else 200) to """{"Payload":{"SearchResults":[]}}"""
+            request.url.host == "store.steampowered.com" && request.url.encodedPath.contains("/search/results") -> steamCode to """{"success":1,"results_html":"","total_count":0,"start":0}"""
+            request.url.host == "store.epicgames.com" -> (if (rawgCode != 200 && steamCode != 200) 503 else 200) to """{"data":{"Catalog":{"searchStore":{"paging":{"total":0},"elements":[]}}}}"""
+            request.url.host == "displaycatalog.mp.microsoft.com" -> (if (rawgCode != 200 && steamCode != 200) 503 else 200) to """{"Results":[]}"""
             request.url.host == "api.rawg.io" && request.url.encodedPath.endsWith("/stores") -> rawgCode to """{"results":[{"url":"https://store.steampowered.com/app/123/"}]}"""
             request.url.host == "api.rawg.io" && request.url.encodedPath.endsWith("/1") -> rawgCode to rawgGame
             request.url.host == "api.rawg.io" -> rawgCode to """{"results":[$rawgGame],"next":null}"""
@@ -90,6 +94,10 @@ class MultiSourceCatalogTest {
         val consoleGame = """{"id":2,"name":"Console Only","slug":"console-only","platforms":[{"platform":{"slug":"playstation5","name":"PlayStation 5"}}]}"""
         val filtered = request.url.queryParameter("platforms") != null
         val (code, body) = when {
+            request.url.host == "storeedgefd.dsx.mp.microsoft.com" -> 200 to """{"Payload":{"SearchResults":[]}}"""
+            request.url.host == "store.steampowered.com" && request.url.encodedPath.contains("/search/results") -> 200 to """{"success":1,"results_html":"","total_count":0,"start":0}"""
+            request.url.host == "store.epicgames.com" -> 200 to """{"data":{"Catalog":{"searchStore":{"paging":{"total":0},"elements":[]}}}}"""
+            request.url.host == "displaycatalog.mp.microsoft.com" -> 200 to """{"Results":[]}"""
             request.url.host == "api.rawg.io" && filtered -> 200 to """{"results":[$pcGame],"next":null}"""
             request.url.host == "api.rawg.io" -> unfilteredCode to """{"results":[$pcGame,$consoleGame],"next":null}"""
             else -> 200 to """{"items":[]}"""

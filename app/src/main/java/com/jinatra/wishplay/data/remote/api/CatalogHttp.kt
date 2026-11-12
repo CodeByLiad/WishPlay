@@ -7,13 +7,14 @@ import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-internal suspend fun OkHttpClient.catalogJson(url: String): JSONObject {
-    return JSONObject(catalogText(url, "application/json"))
+internal suspend fun OkHttpClient.catalogJson(url: String, headers: Map<String, String> = emptyMap()): JSONObject {
+    return JSONObject(catalogText(url, "application/json", headers))
 }
 
-internal suspend fun OkHttpClient.catalogText(url: String, accept: String = "text/html"): String {
+internal suspend fun OkHttpClient.catalogText(url: String, accept: String = "text/html", headers: Map<String, String> = emptyMap()): String {
     val call = newCall(Request.Builder().url(url).header("Accept", accept)
-        .header("User-Agent", "Mozilla/5.0 (compatible; WishPlay/1.2.2)").build())
+        .header("User-Agent", "Mozilla/5.0 (compatible; WishPlay/1.4)")
+        .apply { headers.forEach { (name, value) -> header(name, value) } }.build())
     return suspendCancellableCoroutine { continuation ->
         continuation.invokeOnCancellation { call.cancel() }
         call.enqueue(object : Callback {

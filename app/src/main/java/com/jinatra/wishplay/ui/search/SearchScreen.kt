@@ -103,7 +103,7 @@ fun SearchScreen(
         }
     }
 
-    val platforms = listOf("All", "Android", "PC", "PS5", "PS4", "Xbox Series", "Switch", "iOS")
+    val platforms = listOf("All", "Android", "PC", "PS5", "PS4", "Xbox Series", "Switch", "Switch 2", "iOS")
     val platformShortNames = mapOf(
         "All" to "All",
         "PC" to "PC",
@@ -111,6 +111,7 @@ fun SearchScreen(
         "PS4" to "PS4",
         "Xbox Series" to "Xbox",
         "Switch" to "Switch",
+        "Switch 2" to "Switch 2",
         "Android" to "Android",
         "iOS" to "iOS"
     )
@@ -413,10 +414,19 @@ fun SearchScreen(
                 }
                 item {
                     Column {
-                        Text("Sources · store listings are for the US", style = MaterialTheme.typography.bodySmall,
+                        Text("Sources · US stores and Nintendo Europe", style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            listOf("Google Play" to "https://play.google.com/store/apps/category/GAME", "RAWG" to "https://rawg.io", "Steam" to "https://store.steampowered.com", "App Store" to "https://apps.apple.com").forEach { (name, url) ->
+                            listOf(
+                                "Google Play" to "https://play.google.com/store/apps/category/GAME",
+                                "RAWG" to "https://rawg.io",
+                                "Steam" to "https://store.steampowered.com",
+                                "App Store" to "https://apps.apple.com",
+                                "Nintendo" to "https://www.nintendo.com/en-gb/Games/",
+                                "PlayStation" to "https://store.playstation.com",
+                                "Microsoft" to "https://www.xbox.com/games",
+                                "Epic" to "https://store.epicgames.com"
+                            ).forEach { (name, url) ->
                                 Text(name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.clickable { uriHandler.openUri(url) }.padding(vertical = 12.dp))
                             }
@@ -503,7 +513,7 @@ fun SearchResultRow(
     val releaseGame = game.forPlatform(selectedPlatform)
     val daysUntil = releaseGame.daysUntilRelease()
     val releaseLabel = when {
-        daysUntil == null -> if (game.expectedYear != null) "TBA ${game.expectedYear}" else "Date TBA"
+        daysUntil == null -> if (game.expectedYear != null) "TBA ${game.expectedYear}" else "Date not listed"
         daysUntil < 0 -> "Out now"
         daysUntil == 0 -> "Today"
         daysUntil == 1 -> "Tomorrow"
@@ -511,8 +521,17 @@ fun SearchResultRow(
         else -> releaseGame.releaseDate ?: "Upcoming"
     }
 
-    val sourceTag = when { game.id.startsWith("play_") -> "Google Play · "; game.id.startsWith("steam_") -> "Steam · "; game.id.startsWith("apple_") -> "App Store · "; else -> "" }
-    val platformsText = sourceTag + game.platforms.keys.joinToString(", ")
+    val sourceTag = when {
+        game.id.startsWith("play_") -> "Google Play"
+        game.id.startsWith("steam_") -> "Steam"
+        game.id.startsWith("apple_") -> "App Store"
+        game.id.startsWith("nintendo_") -> "Nintendo"
+        game.id.startsWith("microsoft_") -> "Microsoft Store"
+        game.id.startsWith("ps_") -> "PlayStation Store"
+        game.id.startsWith("epic_") -> "Epic Games Store"
+        else -> "RAWG"
+    }
+    val platformsText = if (selectedPlatform == "All") game.platforms.keys.joinToString(", ") else selectedPlatform
 
     val buttonCornerRadius by animateDpAsState(
         targetValue = if (game.inWishlist) 24.dp else 16.dp,
@@ -554,8 +573,7 @@ fun SearchResultRow(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = if (game.platforms.values.all { it == null }) platformsText
-                        else if (selectedPlatform == "All") "$platformsText\nRelease: $releaseLabel" else "$selectedPlatform · $releaseLabel",
+                    text = "$sourceTag · $platformsText\n$releaseLabel",
                     fontFamily = BodyFontFamily,
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -60,6 +60,7 @@ class SearchViewModel @Inject constructor(
     private var searchJob: Job? = null
     private var otherJob: Job? = null
     private var loadedPage = 0
+    private var requestedPage = 1
     private var generation = 0
     private val _busyGames = MutableStateFlow<Set<String>>(emptySet())
     private val _sourceNotice = MutableStateFlow<String?>(null)
@@ -209,7 +210,10 @@ class SearchViewModel @Inject constructor(
         if (!_isLoading.value && _pageState.value.first) performSearch(_query.value, _selectedPlatform.value, loadedPage + 1)
     }
 
-    fun retry() = performSearch(_query.value, _selectedPlatform.value, if (_results.value.isEmpty()) 1 else loadedPage + 1)
+    fun retry() {
+        searchRepository.invalidateSearchPage(_query.value, _selectedPlatform.value, requestedPage)
+        performSearch(_query.value, _selectedPlatform.value, requestedPage, preserveResults = true)
+    }
 
     /**
      * Fills the "On other platforms" section after the primary results are already on screen.
@@ -236,7 +240,8 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    private fun performSearch(q: String, plat: String, page: Int = 1) {
+    private fun performSearch(q: String, plat: String, page: Int = 1, preserveResults: Boolean = false) {
+        requestedPage = page
         val requestGeneration = ++generation
         searchJob?.cancel()
         if (page == 1) {
@@ -245,7 +250,7 @@ class SearchViewModel @Inject constructor(
             // for page 1 and nothing would tell the user the section had been dropped.
             otherJob?.cancel()
             loadedPage = 0
-            _results.value = searchRepository.cachedSearchPage(q, plat, 1)?.games.orEmpty()
+            if (!preserveResults) _results.value = searchRepository.cachedSearchPage(q, plat, 1)?.games.orEmpty()
             _otherResults.value = emptyList()
             _otherLoading.value = false
             _sourceNotice.value = null

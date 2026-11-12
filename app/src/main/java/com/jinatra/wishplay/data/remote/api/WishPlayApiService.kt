@@ -39,10 +39,12 @@ interface WishPlayApiService {
     fun searchGamesUpdates(query: String, platform: String, page: Int): kotlinx.coroutines.flow.Flow<GameSearchPage> =
         kotlinx.coroutines.flow.flow { emit(searchGamesPage(query, platform, page)) }
     fun cachedSearchPage(query: String, platform: String, page: Int): GameSearchPage? = null
+    fun invalidateSearchPage(query: String, platform: String, page: Int) {}
 
     /** Games matching [query] that the [platform] filter excluded, minus anything in [shown]. */
     suspend fun searchOtherPlatforms(query: String, platform: String, shown: List<GameDto>): List<GameDto> = emptyList()
     suspend fun getGameDetails(id: String): GameDto?
+    suspend fun getGameDetails(id: String, titleHint: String?): GameDto? = getGameDetails(id)
 }
 
 @Singleton
@@ -53,6 +55,10 @@ class WishPlayApiServiceImpl @Inject constructor(
     private val client = client.newBuilder().callTimeout(8, java.util.concurrent.TimeUnit.SECONDS)
         .retryOnConnectionFailure(false).build()
     private val googlePlay = GooglePlayCatalog(this.client)
+    private val nintendo = NintendoCatalog(this.client)
+    private val microsoft = MicrosoftCatalog(this.client)
+    private val playStation = PlayStationCatalog(this.client)
+    private val epic = EpicCatalog(this.client)
 
     // RAWG Live Video Game Database API
     private val rawgApiKey = "0daeeb89a3e440e7864d61b5e2a94d26"
@@ -67,6 +73,9 @@ class WishPlayApiServiceImpl @Inject constructor(
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Snapshot>?) = size > 32
     }
     private fun cacheKey(query: String, platform: String, page: Int) = "$platform:$page:${catalogTitleKey(query)}"
+    override fun invalidateSearchPage(query: String, platform: String, page: Int) {
+        synchronized(searchCache) { searchCache.remove(cacheKey(query, platform, page)) }
+    }
     override fun cachedSearchPage(query: String, platform: String, page: Int): GameSearchPage? = synchronized(searchCache) {
         searchCache[cacheKey(query, platform, page)]?.takeIf {
             android.os.SystemClock.elapsedRealtime() - it.time < 24 * 60 * 60_000L
@@ -90,17 +99,19 @@ class WishPlayApiServiceImpl @Inject constructor(
                 send(snapshot.page.copy(isComplete = false, hasMore = false,
                     warnings = listOf("Saved results. Checking for updates…")))
             }
-            if (page != 1) {
-                val value = kotlinx.coroutines.withTimeout(6000) { searchRawgPage(query, platform, page) }
-                synchronized(searchCache) { searchCache[key] = Snapshot(android.os.SystemClock.elapsedRealtime(), value) }
-                send(value)
-                return@channelFlow
-            }
             val sources = linkedMapOf<String, suspend () -> GameSearchPage>()
-            sources["RAWG"] = { searchRawgPage(query, platform, page) }
-            if (platform in listOf("All", "PC")) sources["Steam"] = { GameSearchPage(stores.searchSteam(query)) }
-            if (platform in listOf("All", "iOS")) sources["App Store"] = { GameSearchPage(stores.searchApple(query)) }
-            if (platform in listOf("All", "Android")) sources["Google Play"] = { GameSearchPage(googlePlay.search(query)) }
+            if (platform != "Switch 2") sources["RAWG"] = { searchRawgPage(query, platform, page) }
+            if (platform in listOf("All", "Switch", "Switch 2")) sources["Nintendo"] = { nintendo.search(query, platform, page) }
+            if (platform in listOf("All", "PS4", "PS5")) sources["PlayStation Store"] = { playStation.search(query, platform, page) }
+            if (platform in listOf("All", "PC", "Android", "iOS")) sources["Epic Games Store"] = { epic.search(query, platform, page) }
+            if (platform in listOf("All", "PC")) sources["Steam catalog"] = { stores.searchSteamPage(query, page) }
+            if (platform in listOf("All", "PC", "Xbox Series")) sources["Microsoft catalog"] = { microsoft.searchPage(query, platform, page) }
+            if (page == 1) {
+                if (platform in listOf("All", "PC", "Xbox Series")) sources["Microsoft Store"] = { GameSearchPage(microsoft.search(query, platform)) }
+                if (platform in listOf("All", "PC")) sources["Steam"] = { GameSearchPage(stores.searchSteam(query)) }
+                if (platform in listOf("All", "iOS")) sources["App Store"] = { GameSearchPage(stores.searchApple(query)) }
+                if (platform in listOf("All", "Android")) sources["Google Play"] = { GameSearchPage(googlePlay.search(query)) }
+            }
             val responses = linkedMapOf<String, Result<GameSearchPage>>()
             val lock = Mutex()
             sources.map { (name, request) -> launch {
@@ -114,22 +125,26 @@ class WishPlayApiServiceImpl @Inject constructor(
                         return@withLock
                     }
                     val base = responses["RAWG"]?.getOrNull()?.games.orEmpty()
-                    val additions = listOf("Steam", "App Store", "Google Play").flatMap { responses[it]?.getOrNull()?.games.orEmpty() }
-                    val unique = additions.filter { extra -> base.none { existing ->
-                        catalogTitleKey(existing.title) == catalogTitleKey(extra.title) && existing.platforms.keys.containsAll(extra.platforms.keys)
-                    } }
+                    val additions = sources.keys.filter { it != "RAWG" }.flatMap { responses[it]?.getOrNull()?.games.orEmpty() }
                     val queryKey = catalogTitleKey(query)
-                    val games = (base + unique).distinctBy { it.id }.sortedBy { game ->
+                    val games = mergeVerifiedListings(base + additions).sortedBy { game ->
                         val title = catalogTitleKey(game.title)
                         when { queryKey.isBlank() || title == queryKey -> 0
                             title.startsWith(queryKey) -> 1; title.contains(queryKey) -> 2; else -> 3 }
                     }
                     if (games.isNotEmpty() || complete) {
-                        val warnings = sources.keys.filter { responses[it]?.isFailure == true }.map {
-                            if (it == "RAWG") "RAWG is unavailable; showing store results."
-                            else "$it is unavailable; other results are still shown."
+                        val groups = sources.keys.groupBy {
+                            when (it) { "Steam catalog" -> "Steam"; "Microsoft catalog" -> "Microsoft Store"; else -> it }
                         }
-                        val value = GameSearchPage(games, hasMore = complete && responses["RAWG"]?.getOrNull()?.hasMore == true,
+                        val warnings = (groups.mapNotNull { (name, members) ->
+                            when {
+                                members.none { responses[it]?.isFailure == true } -> null
+                                members.any { responses[it]?.isSuccess == true } -> "$name search is limited; some results could not load."
+                                name == "RAWG" -> "RAWG is unavailable; showing store results."
+                                else -> "$name is unavailable; other results are still shown."
+                            }
+                        } + responses.values.flatMap { it.getOrNull()?.warnings.orEmpty() }).distinct()
+                        val value = GameSearchPage(games, hasMore = complete && responses.values.any { it.getOrNull()?.hasMore == true },
                             warnings = warnings, isComplete = complete)
                         synchronized(searchCache) { searchCache[key] = Snapshot(android.os.SystemClock.elapsedRealtime(), value) }
                         send(value)
@@ -178,7 +193,15 @@ class WishPlayApiServiceImpl @Inject constructor(
         return selectOtherPlatformGames(primary = shown, candidates = unfiltered.games, selectedPlatform = platform)
     }
 
+    override suspend fun getGameDetails(id: String, titleHint: String?): GameDto? = withContext(Dispatchers.IO) {
+        if (id.startsWith("epic_")) epic.details(id, titleHint) else getGameDetails(id)
+    }
+
     override suspend fun getGameDetails(id: String): GameDto? = withContext(Dispatchers.IO) {
+        if (id.startsWith("epic_")) return@withContext epic.cachedDetails(id)
+        if (id.startsWith("nintendo_")) return@withContext nintendo.details(id)
+        if (id.startsWith("microsoft_")) return@withContext microsoft.details(id)
+        if (id.startsWith("ps_")) return@withContext playStation.details(id)
         if (id.startsWith("play_")) return@withContext googlePlay.details(id)
         if (id.startsWith("steam_")) return@withContext id.removePrefix("steam_").toLongOrNull()?.let { stores.steamDetails(it) }
         if (id.startsWith("apple_")) return@withContext id.removePrefix("apple_").toLongOrNull()?.let { stores.appleDetails(it) }
