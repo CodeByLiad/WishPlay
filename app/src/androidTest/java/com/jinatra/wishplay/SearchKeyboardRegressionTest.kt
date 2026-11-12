@@ -24,13 +24,33 @@ class SearchKeyboardRegressionTest {
             compose.onNodeWithText("Search").performClick()
             compose.onNodeWithText("Android").performClick()
             compose.onNode(hasSetTextAction()).performClick()
-            compose.waitUntil(5000) {
+            try { compose.waitUntil(5000) {
                 var shown = false
                 scenario.onActivity { activity ->
                     shown = androidx.core.view.ViewCompat.getRootWindowInsets(activity.window.decorView)
                         ?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime()) == true
                 }
                 shown
+            } } catch (error: Throwable) {
+                scenario.onActivity { activity ->
+                    android.util.Log.e("WishPlayKeyboard", "windowFocus=${activity.hasWindowFocus()} viewFocus=${activity.currentFocus} imeVisible=${androidx.core.view.ViewCompat.getRootWindowInsets(activity.window.decorView)?.isVisible(androidx.core.view.WindowInsetsCompat.Type.ime())}")
+                }
+                val folder = instrumentation.targetContext.getExternalFilesDir(null)!!
+                instrumentation.uiAutomation.takeScreenshot()?.let { bitmap ->
+                    java.io.File(folder, "native-keyboard-failure.png").outputStream().use {
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                    }
+                }
+                val root = instrumentation.uiAutomation.rootInActiveWindow
+                val text = StringBuilder()
+                fun visit(node: android.view.accessibility.AccessibilityNodeInfo, depth: Int) {
+                    if (depth > 30) return
+                    text.appendLine("${node.className} text=${node.text} focused=${node.isFocused}")
+                    for (index in 0 until node.childCount) node.getChild(index)?.let { visit(it, depth + 1) }
+                }
+                root?.let { visit(it, 0) }
+                java.io.File(folder, "native-keyboard-failure.txt").writeText(text.toString())
+                throw error
             }
             // Individual native key events exercise the path that an atomic semantics edit misses.
             instrumentation.sendStringSync("off-road league online")
